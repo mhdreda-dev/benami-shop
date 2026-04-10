@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapports — Ben Ami Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .report-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+    .report-table tbody td{font-size:12px;padding:10px 14px}
+    .report-table thead th{font-size:10px;padding:10px 14px}
+    .rank-num{font-family:'Syne',sans-serif;font-weight:800;color:var(--text-dim);font-size:13px}
+    .progress-bar-wrap{flex:1;height:5px;background:var(--surface-3);border-radius:99px;overflow:hidden;min-width:60px}
+    .progress-bar-fill{height:100%;border-radius:99px;background:var(--accent)}
+    .export-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);transition:all var(--t-fast)}
+    .export-btn:hover{border-color:var(--accent);color:var(--accent)}
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-wrapper">
+    <header class="topbar" id="topbar"></header>
+    <main class="page-content">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div><h1>Rapports & Analyses</h1><p>Vue analytique de votre inventaire — données de benami_shop.db</p></div>
+        <div style="display:flex;gap:8px">
+          <button class="export-btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
+          <button class="export-btn" onclick="exportJSON()"><i class="fas fa-file-code"></i> Export JSON</button>
+        </div>
+      </div>
+
+      <!-- KPI Row -->
+      <div class="stats-grid" id="kpi-grid" style="margin-bottom:20px"></div>
+
+      <!-- Charts -->
+      <div class="report-grid">
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Répartition valeur par marque</div><div class="chart-subtitle">Valeur stock (prix × quantité)</div></div>
+          <div style="position:relative;height:220px"><canvas id="value-chart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header"><div class="chart-title">Distribution du stock</div><div class="chart-subtitle">Statut en stock · faible · rupture</div></div>
+          <div style="position:relative;height:220px"><canvas id="status-chart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Two tables side by side -->
+      <div class="report-grid">
+
+        <!-- Top produits par valeur -->
+        <div class="chart-card" style="padding:0;overflow:hidden">
+          <div style="padding:18px 20px 12px;border-bottom:1px solid var(--border)">
+            <div class="chart-title">Top produits — par valeur</div>
+            <div class="chart-subtitle">prix × quantité en stock</div>
+          </div>
+          <table class="report-table" style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">#</th><th style="text-align:left;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Produit</th><th style="text-align:right;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Valeur</th></tr></thead>
+            <tbody id="top-value-table"></tbody>
+          </table>
+        </div>
+
+        <!-- Stock faible / ruptures -->
+        <div class="chart-card" style="padding:0;overflow:hidden">
+          <div style="padding:18px 20px 12px;border-bottom:1px solid var(--border)">
+            <div class="chart-title">Alertes stock</div>
+            <div class="chart-subtitle">Produits en rupture ou stock critique</div>
+          </div>
+          <table class="report-table" style="width:100%;border-collapse:collapse">
+            <thead><tr><th style="text-align:left;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Produit</th><th style="text-align:center;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Stock</th><th style="text-align:left;padding:10px 14px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Statut</th></tr></thead>
+            <tbody id="alert-table"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Movements summary table -->
+      <div class="chart-card" style="padding:0;overflow:hidden">
+        <div style="padding:18px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <div><div class="chart-title">Résumé des mouvements par produit</div><div class="chart-subtitle">Total entrées vs sorties</div></div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="text-align:left;padding:11px 16px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Produit</th>
+            <th style="text-align:center;padding:11px 16px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Entrées</th>
+            <th style="text-align:center;padding:11px 16px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Sorties</th>
+            <th style="text-align:center;padding:11px 16px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Ajust.</th>
+            <th style="text-align:left;padding:11px 16px;font-size:10px;color:var(--text-dim);background:var(--surface-2);border-bottom:1px solid var(--border)">Activité</th>
+          </tr></thead>
+          <tbody id="mv-summary-table"></tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    initPage('Rapports', 'Analyses');
+
+    const PAL = ['#f97316','#3b82f6','#22c55e','#eab308','#a855f7','#ec4899','#06b6d4','#f43f5e','#84cc16'];
+
+    function render() {
+      const products  = DB.products.getAll();
+      const movements = DB.movements.getAll();
+      const stats     = DB.products.getStats();
+
+      // KPI grid
+      const totalValue = products.reduce((s,p)=>s+p.price*p.qty,0);
+      const avgPrice   = products.length ? Math.round(products.reduce((s,p)=>s+p.price,0)/products.length) : 0;
+      const totalIn    = movements.filter(m=>m.type==='in').reduce((s,m)=>s+m.quantity,0);
+      const totalOut   = movements.filter(m=>m.type==='out').reduce((s,m)=>s+m.quantity,0);
+
+      document.getElementById('kpi-grid').innerHTML = `
+        <div class="stat-card"><div class="stat-card-top"><span class="stat-label">Valeur totale</span><div class="stat-icon orange"><i class="fas fa-coins"></i></div></div><div class="stat-value">${totalValue.toLocaleString()}</div><div class="stat-change">MAD en stock</div></div>
+        <div class="stat-card"><div class="stat-card-top"><span class="stat-label">Prix moyen</span><div class="stat-icon blue"><i class="fas fa-tag"></i></div></div><div class="stat-value">${avgPrice.toLocaleString()}</div><div class="stat-change">MAD par modèle</div></div>
+        <div class="stat-card"><div class="stat-card-top"><span class="stat-label">Total entré</span><div class="stat-icon green"><i class="fas fa-arrow-down"></i></div></div><div class="stat-value">${totalIn}</div><div class="stat-change up">unités reçues</div></div>
+        <div class="stat-card"><div class="stat-card-top"><span class="stat-label">Total sorti</span><div class="stat-icon red"><i class="fas fa-arrow-up"></i></div></div><div class="stat-value">${totalOut}</div><div class="stat-change down">unités vendues</div></div>
+      `;
+
+      // Value by brand chart
+      const brandVal = {};
+      products.forEach(p=>{ brandVal[p.brand]=(brandVal[p.brand]||0)+p.price*p.qty; });
+      const bLabels=Object.keys(brandVal),bData=Object.values(brandVal);
+      new Chart(document.getElementById('value-chart'),{type:'doughnut',data:{labels:bLabels,datasets:[{data:bData,backgroundColor:PAL.slice(0,bLabels.length),borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
+
+      // Status pie chart
+      new Chart(document.getElementById('status-chart'),{type:'pie',data:{labels:['En stock','Stock faible','Rupture'],datasets:[{data:[stats.total-stats.outOfStock-stats.lowStock,stats.lowStock,stats.outOfStock],backgroundColor:['#22c55e','#eab308','#ef4444'],borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
+
+      // Top by value table
+      const byValue=[...products].sort((a,b)=>(b.price*b.qty)-(a.price*a.qty)).slice(0,8);
+      const maxVal=byValue[0]?byValue[0].price*byValue[0].qty:1;
+      document.getElementById('top-value-table').innerHTML=byValue.map((p,i)=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:10px 14px"><span class="rank-num">#${i+1}</span></td>
+          <td style="padding:10px 14px">
+            <div style="font-size:13px;font-weight:500">${p.name}</div>
+            <div style="font-size:11px;color:var(--text-dim)">${p.brand} · ${p.qty} u. × ${p.price.toLocaleString()} MAD</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:5px">
+              <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:${Math.round((p.price*p.qty)/maxVal*100)}%"></div></div>
+            </div>
+          </td>
+          <td style="padding:10px 14px;text-align:right;font-family:'Syne',sans-serif;font-weight:800;color:var(--accent)">${(p.price*p.qty).toLocaleString()}</td>
+        </tr>`).join('');
+
+      // Alert table
+      const alerts=[...products].filter(p=>p.qty<=5).sort((a,b)=>a.qty-b.qty);
+      document.getElementById('alert-table').innerHTML = alerts.length
+        ? alerts.map(p=>{const st=DB.helpers.stockStatus(p.qty);return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px"><div style="font-size:13px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--text-dim)">${p.brand}</div></td><td style="padding:10px 14px;text-align:center;font-family:'Syne',sans-serif;font-weight:800">${p.qty}</td><td style="padding:10px 14px"><span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span></td></tr>`;}).join('')
+        : `<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px"><i class="fas fa-check-circle" style="color:var(--success);margin-right:6px"></i>Aucune alerte stock</td></tr>`;
+
+      // Movements summary table
+      const mvMap={};
+      movements.forEach(m=>{
+        if(!mvMap[m.product_name])mvMap[m.product_name]={in:0,out:0,adjust:0,total:0};
+        mvMap[m.product_name][m.type]+=m.quantity;
+        mvMap[m.product_name].total+=m.quantity;
+      });
+      const mvRows=Object.entries(mvMap).sort((a,b)=>b[1].total-a[1].total);
+      const maxMv=mvRows[0]?mvRows[0][1].total:1;
+      document.getElementById('mv-summary-table').innerHTML=mvRows.map(([name,s])=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:11px 16px;font-size:13px;font-weight:500">${name}</td>
+          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--success)">+${s.in}</td>
+          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--danger)">−${s.out}</td>
+          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--blue)">${s.adjust}</td>
+          <td style="padding:11px 16px">
+            <div class="progress-bar-wrap" style="min-width:80px"><div class="progress-bar-fill" style="width:${Math.round(s.total/maxMv*100)}%"></div></div>
+          </td>
+        </tr>`).join('');
+    }
+
+    function exportCSV() {
+      const products = DB.products.getAll();
+      const header = 'ID,Nom,SKU,Marque,Prix,Quantite,Couleur,Statut\n';
+      const rows = products.map(p =>
+        `${p.id},"${p.name}","${p.sku}","${p.brand}",${p.price},${p.qty},"${p.color||''}","${DB.helpers.stockLabel(DB.helpers.stockStatus(p.qty))}"`
+      ).join('\n');
+      const blob = new Blob([header+rows],{type:'text/csv'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='benami_products.csv';a.click();
+      Toast.success('Export CSV téléchargé !');
+    }
+
+    function exportJSON() {
+      const data = {
+        exported_at: new Date().toISOString(),
+        source: 'benami_shop.db',
+        products: DB.products.getAll(),
+        brands: DB.brands.getAll(),
+        movements: DB.movements.getAll(),
+      };
+      const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='benami_export.json';a.click();
+      Toast.success('Export JSON téléchargé !');
+    }
+
+    render();
+  </script>
+</body>
+</html>

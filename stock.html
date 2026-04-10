@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<!--
+  BEN AMI SHOP — Stock Management (stock.html)
+  Card grid showing each product's sizes with +/- qty adjusters.
+  Changes are persisted to localStorage and logged as movements.
+-->
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion stock — Ben Ami Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+
+  <style>
+    /* Page-specific: filter toolbar for stock page */
+    .stock-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stock-toolbar .toolbar-search {
+      max-width: 280px;
+    }
+
+    /* Highlight card on low/out stock */
+    .stock-card.has-out  { border-color: rgba(239,68,68,0.25); }
+    .stock-card.has-low  { border-color: rgba(234,179,8,0.2); }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar" id="sidebar"></aside>
+
+  <div class="main-wrapper">
+    <header class="topbar" id="topbar"></header>
+
+    <main class="page-content">
+
+      <div class="page-header">
+        <h1>Gestion du stock</h1>
+        <p>Ajustez les quantités par taille directement — chaque modification est enregistrée</p>
+      </div>
+
+      <!-- Stock toolbar -->
+      <div class="stock-toolbar">
+        <div class="toolbar-search">
+          <i class="fas fa-search"></i>
+          <input type="text" id="stock-search" placeholder="Filtrer par nom ou marque…">
+        </div>
+
+        <select class="filter-select" id="stock-filter-status">
+          <option value="">Tous les statuts</option>
+          <option value="out">Rupture de stock</option>
+          <option value="low">Stock faible</option>
+          <option value="ok">En stock</option>
+        </select>
+
+        <select class="filter-select" id="stock-filter-brand">
+          <option value="">Toutes les marques</option>
+        </select>
+
+        <!-- Quick stats -->
+        <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap" id="stock-quick-stats"></div>
+      </div>
+
+      <!-- Stock Cards Grid -->
+      <div class="stock-grid" id="stock-grid"></div>
+
+    </main>
+  </div>
+
+  <!-- ── ADD MOVEMENT MODAL (for manual adjustments) ───────────── -->
+  <div class="modal-overlay" id="movement-modal">
+    <div class="modal" style="width:460px">
+      <div class="modal-header">
+        <div class="modal-title" id="mv-modal-title">Mouvement de stock</div>
+        <div class="modal-close" onclick="Modal.close('movement-modal')"><i class="fas fa-times"></i></div>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group span-2">
+            <label class="form-label">Produit</label>
+            <input class="form-input" id="mv-product-name" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="mv-type">
+              <option value="in">Entrée (réception)</option>
+              <option value="out">Sortie (vente)</option>
+              <option value="adjust">Ajustement</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Taille</label>
+            <select class="form-select" id="mv-size">
+              <option value="">Toutes</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantité *</label>
+            <input class="form-input" id="mv-qty" type="number" min="1" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Note / Motif</label>
+            <input class="form-input" id="mv-note" placeholder="ex: Réception fournisseur…">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="Modal.close('movement-modal')">Annuler</button>
+        <button class="btn btn-primary" onclick="applyMovement()">
+          <i class="fas fa-save"></i> Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- ── SCRIPTS ────────────────────────────────────────────────── -->
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    /* ── Stock Page Logic ──────────────────────────────────────── */
+
+    initPage('Gestion stock', 'Inventaire');
+
+    let mvProductId = null; // ID for the movement modal
+
+    /* ── Quick Stats Bar ─────────────────────────────────────── */
+    function renderQuickStats() {
+      const stats = DB.products.getStats();
+      document.getElementById('stock-quick-stats').innerHTML = `
+        <div class="alert-pill${stats.outOfStock > 0 ? ' danger' : ' success'}">
+          <i class="fas fa-exclamation-circle"></i>
+          ${stats.outOfStock} rupture${stats.outOfStock !== 1 ? 's' : ''}
+        </div>
+        <div class="alert-pill${stats.lowStock > 0 ? ' warning' : ' success'}">
+          <i class="fas fa-exclamation-triangle"></i>
+          ${stats.lowStock} stock${stats.lowStock !== 1 ? 's' : ''} faible${stats.lowStock !== 1 ? 's' : ''}
+        </div>
+      `;
+    }
+
+    /* ── Populate brand filter ───────────────────────────────── */
+    function populateBrandFilter() {
+      const brands = [...new Set(DB.products.getAll().map(p => p.brand))].sort();
+      const sel = document.getElementById('stock-filter-brand');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">Toutes les marques</option>' +
+        brands.map(b => `<option value="${b}"${b === cur ? ' selected' : ''}>${b}</option>`).join('');
+    }
+
+    /* ── Render Stock Grid ───────────────────────────────────── */
+    function renderStock() {
+      const search    = document.getElementById('stock-search').value.toLowerCase().trim();
+      const statusF   = document.getElementById('stock-filter-status').value;
+      const brandF    = document.getElementById('stock-filter-brand').value;
+
+      let products = DB.products.getAll().filter(p => {
+        if (search   && !p.name.toLowerCase().includes(search) && !p.brand.toLowerCase().includes(search)) return false;
+        if (brandF   && p.brand !== brandF) return false;
+        if (statusF  && DB.helpers.stockStatus(p.qty) !== statusF) return false;
+        return true;
+      });
+
+      const grid = document.getElementById('stock-grid');
+
+      if (!products.length) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <i class="fas fa-box-open"></i>
+            <h3>Aucun produit trouvé</h3>
+            <p>Modifiez vos filtres ou ajoutez un produit.</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = products.map(p => {
+        const sizes = DB.sizes.getForProduct(p.id);
+        const st    = DB.helpers.stockStatus(p.qty);
+        const hasOut = sizes.some(s => s.qty === 0);
+        const hasLow = sizes.some(s => s.qty > 0 && s.qty <= 2);
+        const cardCls = hasOut ? 'stock-card has-out' : hasLow ? 'stock-card has-low' : 'stock-card';
+
+        // Build size cells
+        const sizeCells = sizes.map(s => {
+          const cls = s.qty === 0 ? 'out' : s.qty <= 2 ? 'low' : '';
+          return `
+            <div class="stock-size-item ${cls}">
+              <div class="stock-size-num">${s.size}</div>
+              <div class="qty-control">
+                <button class="qty-btn" onclick="adjustSize(${p.id}, ${s.size}, -1)" title="Retirer 1">−</button>
+                <span class="qty-val" id="qv-${p.id}-${s.size}">${s.qty}</span>
+                <button class="qty-btn" onclick="adjustSize(${p.id}, ${s.size}, +1)" title="Ajouter 1">+</button>
+              </div>
+            </div>`;
+        }).join('');
+
+        const imgHtml = typeof p.img === 'string' && p.img.startsWith('data:')
+          ? `<div class="stock-card-img"><img src="${p.img}" alt="${p.name}"></div>`
+          : `<div class="stock-card-img">${p.img || '👟'}</div>`;
+
+        return `
+          <div class="${cardCls}">
+            <div class="stock-card-header">
+              ${imgHtml}
+              <div>
+                <div class="stock-card-name">${p.name}</div>
+                <div class="stock-card-brand">${p.brand} · <span style="font-size:10px;color:var(--text-dim)">${p.sku}</span></div>
+              </div>
+            </div>
+
+            <!-- Sizes grid with +/- controls -->
+            <div class="stock-sizes-grid">
+              ${sizeCells || '<div style="color:var(--text-dim);font-size:12px;grid-column:1/-1;text-align:center;padding:8px">Aucune taille définie</div>'}
+            </div>
+
+            <div class="stock-card-footer">
+              <span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="btn btn-ghost btn-sm" onclick="openMovementModal(${p.id})" title="Mouvement manuel">
+                  <i class="fas fa-exchange-alt"></i> Mouvement
+                </button>
+                <span class="stock-total" id="stot-${p.id}">${p.qty} u.</span>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+
+      renderQuickStats();
+      populateBrandFilter();
+    }
+
+    /* ── Adjust a single size quantity (inline +/-) ──────────── */
+    function adjustSize(productId, size, delta) {
+      /* Employé : sortie interdite */
+      if (delta < 0 && !Auth.isAdmin()) {
+        Toast.error('Les sorties de stock sont réservées aux administrateurs.');
+        return;
+      }
+      const p = DB.products.getById(productId);
+      if (!p) return;
+
+      const newTotal = DB.sizes.adjustQty(productId, size, delta);
+
+      // Update displayed values without full re-render
+      const qvEl = document.getElementById(`qv-${productId}-${size}`);
+      if (qvEl) {
+        const szData  = DB.sizes.getForProduct(productId);
+        const sizeObj = szData.find(s => s.size === size);
+        if (sizeObj) qvEl.textContent = sizeObj.qty;
+      }
+
+      const totEl = document.getElementById(`stot-${productId}`);
+      if (totEl) totEl.textContent = `${newTotal} u.`;
+
+      // Log movement
+      DB.movements.add({
+        product_id:   productId,
+        size,
+        type:         delta > 0 ? 'in' : 'out',
+        quantity:     Math.abs(delta),
+        note:         `Ajust. rapide taille ${size}`,
+        product_name: p.name,
+      });
+
+      Sidebar.updateBadges();
+    }
+
+    /* ── Manual Movement Modal ───────────────────────────────── */
+    function openMovementModal(productId) {
+      const p = DB.products.getById(productId);
+      if (!p) return;
+      mvProductId = productId;
+
+      document.getElementById('mv-modal-title').textContent = `Mouvement — ${p.name}`;
+      document.getElementById('mv-product-name').value      = `${p.name} (${p.sku})`;
+
+      // Populate size dropdown
+      const sSel = document.getElementById('mv-size');
+      sSel.innerHTML = '<option value="">Toutes les tailles</option>';
+      (p.sizes || []).forEach(s => sSel.innerHTML += `<option value="${s}">${s}</option>`);
+
+      document.getElementById('mv-qty').value  = 1;
+      document.getElementById('mv-note').value = '';
+
+      Modal.open('movement-modal');
+    }
+
+    function applyMovement() {
+      const p     = DB.products.getById(mvProductId);
+      const type  = document.getElementById('mv-type').value;
+      const size  = document.getElementById('mv-size').value ? +document.getElementById('mv-size').value : null;
+      const qty   = parseInt(document.getElementById('mv-qty').value) || 0;
+      const note  = document.getElementById('mv-note').value.trim();
+
+      if (!qty || qty < 1) { Toast.error('Quantité invalide.'); return; }
+
+      DB.movements.apply(mvProductId, size, type, qty, note || DB.helpers.mvLabel(type), p.name);
+
+      Modal.close('movement-modal');
+      renderStock();
+      Sidebar.updateBadges();
+      Toast.success('Mouvement enregistré.');
+    }
+
+    /* ── Event Listeners ─────────────────────────────────────── */
+    document.getElementById('stock-search').addEventListener('input', renderStock);
+    document.getElementById('stock-filter-status').addEventListener('change', renderStock);
+    document.getElementById('stock-filter-brand').addEventListener('change', renderStock);
+    Modal.bindBackdrop('movement-modal');
+
+    /* ── Init ────────────────────────────────────────────────── */
+    renderStock();
+  </script>
+
+</body>
+</html>

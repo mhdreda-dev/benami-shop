@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<!--
+  BEN AMI SHOP — Dashboard dynamique selon rôle
+  Admin  → KPIs complets + logs + users + charts
+  Employee → Produits + actions stock rapides
+-->
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Ben Ami Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* ════════════════════════════════════════════
+       SHARED
+    ════════════════════════════════════════════ */
+    .dash-section { display:none; }
+    .dash-section.active { display:block; }
+
+    .welcome-banner {
+      background: linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%);
+      border-radius:16px; padding:28px 32px; margin-bottom:24px;
+      display:flex; align-items:center; justify-content:space-between; gap:20px;
+      border:1px solid rgba(99,102,241,.3); position:relative; overflow:hidden;
+    }
+    .welcome-banner::before {
+      content:''; position:absolute; right:-40px; top:-40px;
+      width:200px; height:200px; border-radius:50%;
+      background:rgba(99,102,241,.15); pointer-events:none;
+    }
+    .welcome-banner.employee {
+      background:linear-gradient(135deg,#1c1917 0%,#292524 50%,#3d2c1e 100%);
+      border-color:rgba(249,115,22,.3);
+    }
+    .welcome-banner.employee::before { background:rgba(249,115,22,.12); }
+    .wb-title { font-family:'Syne',sans-serif; font-size:1.5rem; font-weight:800; color:#fff; margin-bottom:4px; }
+    .wb-sub   { font-size:.9rem; color:rgba(255,255,255,.65); }
+    .wb-badge {
+      display:flex; align-items:center; gap:8px; padding:8px 18px;
+      border-radius:999px; font-size:.8rem; font-weight:700;
+      background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.2);
+      flex-shrink:0;
+    }
+
+    /* ════════════════════════════════════════════
+       ADMIN — KPI CARDS
+    ════════════════════════════════════════════ */
+    .kpi-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:14px; margin-bottom:24px;
+    }
+    .kpi-card {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:14px; padding:20px 22px;
+      display:flex; align-items:flex-start; justify-content:space-between;
+      gap:12px; transition:border-color .2s, transform .2s; cursor:default;
+      position:relative; overflow:hidden;
+    }
+    .kpi-card:hover { border-color:var(--border-2,#303030); transform:translateY(-2px); }
+    .kpi-card::after {
+      content:''; position:absolute; bottom:0; left:0; right:0;
+      height:3px; border-radius:0 0 14px 14px;
+    }
+    .kpi-card.orange::after { background:#f97316; }
+    .kpi-card.green::after  { background:#22c55e; }
+    .kpi-card.red::after    { background:#ef4444; }
+    .kpi-card.blue::after   { background:#3b82f6; }
+    .kpi-card.purple::after { background:#a855f7; }
+    .kpi-card.yellow::after { background:#eab308; }
+
+    .kpi-icon {
+      width:44px; height:44px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px; flex-shrink:0;
+    }
+    .kpi-icon.orange { background:rgba(249,115,22,.15); color:#f97316; }
+    .kpi-icon.green  { background:rgba(34,197,94,.15);  color:#22c55e; }
+    .kpi-icon.red    { background:rgba(239,68,68,.15);   color:#ef4444; }
+    .kpi-icon.blue   { background:rgba(59,130,246,.15);  color:#3b82f6; }
+    .kpi-icon.purple { background:rgba(168,85,247,.15);  color:#a855f7; }
+    .kpi-icon.yellow { background:rgba(234,179,8,.15);   color:#eab308; }
+
+    .kpi-val   { font-family:'Syne',sans-serif; font-size:1.8rem; font-weight:800; line-height:1; color:var(--text,#f0f0f0); }
+    .kpi-label { font-size:.78rem; color:var(--text-muted,#808080); margin-top:5px; }
+    .kpi-trend { display:flex; align-items:center; gap:4px; font-size:.75rem; margin-top:8px; }
+    .kpi-trend.up   { color:#22c55e; }
+    .kpi-trend.down { color:#ef4444; }
+    .kpi-trend.neutral { color:#808080; }
+
+    /* ════════════════════════════════════════════
+       ADMIN — DEUX COLONNES BOTTOM
+    ════════════════════════════════════════════ */
+    .admin-grid-bottom {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px; margin-top:20px;
+    }
+    @media(max-width:900px) { .admin-grid-bottom { grid-template-columns:1fr; } }
+
+    .panel {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:14px; overflow:hidden;
+    }
+    .panel-header {
+      padding:16px 20px 14px;
+      border-bottom:1px solid var(--border,#252525);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .panel-title { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:700; }
+    .panel-link  {
+      font-size:.78rem; color:#a855f7; font-weight:600;
+      display:flex; align-items:center; gap:4px;
+    }
+    .panel-link:hover { color:#c084fc; }
+    .panel-body  { padding:12px 0; max-height:340px; overflow-y:auto; }
+
+    /* Users list */
+    .user-row {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 20px; transition:background .15s;
+    }
+    .user-row:hover { background:var(--surface-2,#181818); }
+    .ur-av {
+      width:34px; height:34px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.75rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .ur-av.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
+    .ur-av.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
+    .ur-name  { font-size:.86rem; font-weight:600; color:var(--text,#f0f0f0); }
+    .ur-email { font-size:.75rem; color:var(--text-muted,#808080); }
+    .ur-role  {
+      margin-left:auto; font-size:.7rem; font-weight:700; padding:.2rem .6rem;
+      border-radius:999px; flex-shrink:0;
+    }
+    .ur-role.admin    { background:#ede9fe; color:#5b21b6; }
+    .ur-role.employee { background:#fff7ed; color:#c2410c; }
+    .ur-status {
+      width:8px; height:8px; border-radius:50%; flex-shrink:0;
+      background:#22c55e; box-shadow:0 0 6px #22c55e;
+    }
+    .ur-status.inactive { background:#555; box-shadow:none; }
+
+    /* Logs list */
+    .log-row {
+      display:flex; align-items:flex-start; gap:10px;
+      padding:10px 20px; transition:background .15s; border-bottom:1px solid var(--border,#252525);
+    }
+    .log-row:last-child { border-bottom:none; }
+    .log-row:hover { background:var(--surface-2,#181818); }
+    .log-dot {
+      width:30px; height:30px; border-radius:8px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:.72rem;
+    }
+    .log-dot.LOGIN          { background:rgba(168,85,247,.15);  color:#a855f7; }
+    .log-dot.ADD_PRODUCT    { background:rgba(34,197,94,.15);   color:#22c55e; }
+    .log-dot.UPDATE_PRODUCT { background:rgba(59,130,246,.15);  color:#3b82f6; }
+    .log-dot.DELETE_PRODUCT { background:rgba(239,68,68,.15);   color:#ef4444; }
+    .log-dot.STOCK_IN       { background:rgba(34,197,94,.12);   color:#4ade80; }
+    .log-dot.STOCK_OUT      { background:rgba(249,115,22,.15);  color:#f97316; }
+    .log-dot.STOCK_ADJUST   { background:rgba(234,179,8,.15);   color:#eab308; }
+    .log-action { font-size:.78rem; font-weight:700; color:var(--text,#f0f0f0); }
+    .log-who    { font-size:.72rem; color:var(--text-muted,#808080); }
+    .log-target { font-size:.72rem; color:var(--text-muted,#808080); margin-top:1px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .log-time   { margin-left:auto; font-size:.68rem; color:var(--text-dim,#484848); flex-shrink:0; white-space:nowrap; }
+
+    /* Charts grid */
+    .chart-grid-2 {
+      display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;
+    }
+    @media(max-width:900px){ .chart-grid-2 { grid-template-columns:1fr; } }
+    .chart-panel {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:14px; padding:18px 20px;
+    }
+    .chart-panel-title { font-family:'Syne',sans-serif; font-size:.9rem; font-weight:700; margin-bottom:4px; }
+    .chart-panel-sub   { font-size:.75rem; color:var(--text-muted,#808080); margin-bottom:16px; }
+
+    /* ════════════════════════════════════════════
+       EMPLOYEE — DASHBOARD
+    ════════════════════════════════════════════ */
+    .emp-kpi-row {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:12px; margin-bottom:20px;
+    }
+    .emp-kpi {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:12px; padding:16px 18px;
+      display:flex; align-items:center; gap:14px;
+    }
+    .emp-kpi-icon { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+    .emp-kpi-val  { font-family:'Syne',sans-serif; font-size:1.6rem; font-weight:800; line-height:1; }
+    .emp-kpi-label{ font-size:.75rem; color:var(--text-muted,#808080); margin-top:3px; }
+
+    /* Quick action buttons */
+    .quick-actions {
+      display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px;
+    }
+    .qa-btn {
+      display:flex; align-items:center; gap:8px;
+      padding:10px 20px; border-radius:10px; font-size:.88rem; font-weight:700;
+      border:none; cursor:pointer; transition:all .2s; text-decoration:none;
+    }
+    .qa-btn.primary { background:#f97316; color:#fff; }
+    .qa-btn.primary:hover { background:#ea6b0a; }
+    .qa-btn.secondary { background:var(--surface-2,#181818); color:var(--text,#f0f0f0); border:1px solid var(--border,#252525); }
+    .qa-btn.secondary:hover { border-color:var(--border-2,#303030); }
+
+    /* Employee product table */
+    .emp-table-wrap {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:14px; overflow:hidden; margin-bottom:20px;
+    }
+    .emp-table-header {
+      padding:16px 20px 14px;
+      border-bottom:1px solid var(--border,#252525);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    .emp-search {
+      display:flex; align-items:center; gap:8px;
+      background:var(--surface-2,#181818); border:1px solid var(--border,#252525);
+      border-radius:8px; padding:7px 12px; flex:1; max-width:280px;
+    }
+    .emp-search input {
+      background:none; border:none; outline:none; color:var(--text,#f0f0f0);
+      font-size:.85rem; width:100%; font-family:inherit;
+    }
+    .emp-search i { color:var(--text-muted,#808080); font-size:.8rem; }
+
+    table.emp-table { width:100%; border-collapse:collapse; }
+    table.emp-table thead th {
+      background:var(--surface-2,#181818); padding:.65rem 1rem;
+      text-align:left; font-size:.72rem; font-weight:700;
+      color:var(--text-muted,#808080); text-transform:uppercase; letter-spacing:.05em;
+      border-bottom:1px solid var(--border,#252525);
+    }
+    table.emp-table tbody tr { border-bottom:1px solid var(--border,#252525); transition:background .12s; }
+    table.emp-table tbody tr:last-child { border-bottom:none; }
+    table.emp-table tbody tr:hover { background:var(--surface-2,#181818); }
+    table.emp-table td { padding:.75rem 1rem; font-size:.85rem; }
+
+    .stock-badge-sm {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:.2rem .6rem; border-radius:999px; font-size:.7rem; font-weight:700;
+    }
+    .stock-badge-sm.ok  { background:rgba(34,197,94,.15);  color:#22c55e; }
+    .stock-badge-sm.low { background:rgba(234,179,8,.15);  color:#eab308; }
+    .stock-badge-sm.out { background:rgba(239,68,68,.15);  color:#ef4444; }
+
+    .emp-thumb { width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; border-radius:8px; background:var(--surface-2,#181818); flex-shrink:0; }
+    .emp-prod-cell { display:flex; align-items:center; gap:10px; }
+
+    /* Stock in modal */
+    .stock-in-modal {
+      position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200;
+      display:none; align-items:center; justify-content:center;
+    }
+    .stock-in-modal.open { display:flex; }
+    .sim-box {
+      background:var(--surface,#101010);
+      border:1px solid var(--border-2,#303030);
+      border-radius:16px; padding:24px; width:100%; max-width:420px;
+      box-shadow:0 16px 48px rgba(0,0,0,.6);
+    }
+    .sim-box h3 { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:800; margin-bottom:1.2rem; }
+    .sim-field { margin-bottom:1rem; }
+    .sim-field label { display:block; font-size:.82rem; font-weight:600; color:var(--text-muted,#808080); margin-bottom:.4rem; }
+    .sim-field select,
+    .sim-field input  {
+      width:100%; padding:.7rem .9rem;
+      background:var(--surface-2,#181818);
+      border:1.5px solid var(--border-2,#303030);
+      border-radius:8px; color:var(--text,#f0f0f0);
+      font-size:.9rem; font-family:inherit; outline:none;
+    }
+    .sim-field select:focus,
+    .sim-field input:focus  { border-color:#f97316; }
+    .sim-actions { display:flex; gap:8px; margin-top:1.4rem; }
+    .sim-cancel { flex:1; padding:.7rem; background:transparent; border:1px solid var(--border-2,#303030); border-radius:8px; color:var(--text-muted,#808080); font-weight:600; cursor:pointer; font-family:inherit; }
+    .sim-save   { flex:2; padding:.7rem; background:#f97316; border:none; border-radius:8px; color:#fff; font-weight:700; cursor:pointer; font-family:inherit; font-size:.9rem; }
+    .sim-save:hover { background:#ea6b0a; }
+
+    /* Alert strip */
+    .alert-strip { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+    .alert-pill {
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 14px; border-radius:999px; font-size:.78rem; font-weight:600;
+    }
+    .alert-pill.danger  { background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3); }
+    .alert-pill.warning { background:rgba(234,179,8,.15);  color:#eab308; border:1px solid rgba(234,179,8,.3); }
+    .alert-pill.success { background:rgba(34,197,94,.12);  color:#22c55e; border:1px solid rgba(34,197,94,.25); }
+
+    /* Loading skeleton */
+    .skeleton { background:var(--surface-2,#181818); border-radius:8px; animation:sk 1.2s infinite; }
+    @keyframes sk { 0%,100%{opacity:.6} 50%{opacity:1} }
+
+    /* Full-width chart bar */
+    .chart-full {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:14px; padding:18px 20px; margin-top:16px;
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<div class="main-wrapper">
+  <header class="topbar" id="topbar"></header>
+
+  <main class="page-content">
+
+    <!-- ══════════════════════════════════════════
+         ADMIN DASHBOARD
+    ══════════════════════════════════════════ -->
+    <div class="dash-section" id="dash-admin">
+
+      <!-- Welcome banner -->
+      <div class="welcome-banner">
+        <div>
+          <div class="wb-title" id="admin-greeting">Bonjour 👋</div>
+          <div class="wb-sub">Voici un aperçu complet de votre boutique en temps réel.</div>
+        </div>
+        <div class="wb-badge"><i class="fas fa-shield-alt"></i> Administrateur</div>
+      </div>
+
+      <!-- Alert strip -->
+      <div class="alert-strip" id="admin-alerts"></div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card orange">
+          <div>
+            <div class="kpi-val" id="k-products">—</div>
+            <div class="kpi-label">Produits en catalogue</div>
+            <div class="kpi-trend neutral"><i class="fas fa-shoe-prints"></i> Total modèles</div>
+          </div>
+          <div class="kpi-icon orange"><i class="fas fa-box-open"></i></div>
+        </div>
+        <div class="kpi-card green">
+          <div>
+            <div class="kpi-val" id="k-units">—</div>
+            <div class="kpi-label">Unités en stock</div>
+            <div class="kpi-trend up"><i class="fas fa-arrow-up"></i> Stock total</div>
+          </div>
+          <div class="kpi-icon green"><i class="fas fa-layer-group"></i></div>
+        </div>
+        <div class="kpi-card blue">
+          <div>
+            <div class="kpi-val" id="k-value">—</div>
+            <div class="kpi-label">Valeur inventaire (MAD)</div>
+            <div class="kpi-trend neutral"><i class="fas fa-tag"></i> Estimation totale</div>
+          </div>
+          <div class="kpi-icon blue"><i class="fas fa-coins"></i></div>
+        </div>
+        <div class="kpi-card red">
+          <div>
+            <div class="kpi-val" id="k-out">—</div>
+            <div class="kpi-label">Ruptures de stock</div>
+            <div class="kpi-trend down" id="k-out-trend"><i class="fas fa-exclamation-triangle"></i> Produits épuisés</div>
+          </div>
+          <div class="kpi-icon red"><i class="fas fa-exclamation-circle"></i></div>
+        </div>
+        <div class="kpi-card purple">
+          <div>
+            <div class="kpi-val" id="k-users">—</div>
+            <div class="kpi-label">Utilisateurs actifs</div>
+            <div class="kpi-trend neutral"><i class="fas fa-users"></i> Comptes</div>
+          </div>
+          <div class="kpi-icon purple"><i class="fas fa-users"></i></div>
+        </div>
+        <div class="kpi-card yellow">
+          <div>
+            <div class="kpi-val" id="k-logs">—</div>
+            <div class="kpi-label">Actions aujourd'hui</div>
+            <div class="kpi-trend neutral"><i class="fas fa-history"></i> Activité</div>
+          </div>
+          <div class="kpi-icon yellow"><i class="fas fa-history"></i></div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="chart-grid-2">
+        <div class="chart-panel">
+          <div class="chart-panel-title">Stock par marque</div>
+          <div class="chart-panel-sub">Distribution des unités</div>
+          <div style="position:relative;height:220px"><canvas id="brand-chart"></canvas></div>
+        </div>
+        <div class="chart-panel">
+          <div class="chart-panel-title">Top 5 produits</div>
+          <div class="chart-panel-sub">Par quantité en stock</div>
+          <div id="top-products-list"></div>
+        </div>
+      </div>
+
+      <!-- Stock full chart -->
+      <div class="chart-full">
+        <div class="chart-panel-title">Stock par produit</div>
+        <div class="chart-panel-sub">Top 8 modèles</div>
+        <div style="position:relative;height:200px"><canvas id="stock-chart"></canvas></div>
+      </div>
+
+      <!-- Bottom panels: Users + Logs -->
+      <div class="admin-grid-bottom">
+
+        <!-- Users panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fas fa-users" style="color:#a855f7;margin-right:7px"></i>Utilisateurs</div>
+            <a href="users.html" class="panel-link"><i class="fas fa-arrow-right"></i> Gérer</a>
+          </div>
+          <div class="panel-body" id="admin-users-list">
+            <div style="padding:20px;text-align:center;color:var(--text-muted)">
+              <i class="fas fa-spinner fa-spin"></i> Chargement…
+            </div>
+          </div>
+        </div>
+
+        <!-- Logs panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"><i class="fas fa-history" style="color:#eab308;margin-right:7px"></i>Activité récente</div>
+            <a href="logs.html" class="panel-link"><i class="fas fa-arrow-right"></i> Tous les logs</a>
+          </div>
+          <div class="panel-body" id="admin-logs-list">
+            <div style="padding:20px;text-align:center;color:var(--text-muted)">
+              <i class="fas fa-spinner fa-spin"></i> Chargement…
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /admin-grid-bottom -->
+
+    </div><!-- /#dash-admin -->
+
+
+    <!-- ══════════════════════════════════════════
+         EMPLOYEE DASHBOARD
+    ══════════════════════════════════════════ -->
+    <div class="dash-section" id="dash-employee">
+
+      <!-- Welcome banner -->
+      <div class="welcome-banner employee">
+        <div>
+          <div class="wb-title" id="emp-greeting">Bonjour 👋</div>
+          <div class="wb-sub">Gérez les entrées de stock et consultez les produits.</div>
+        </div>
+        <div class="wb-badge" style="border-color:rgba(249,115,22,.4)"><i class="fas fa-user-hard-hat"></i> Employé</div>
+      </div>
+
+      <!-- Alert strip -->
+      <div class="alert-strip" id="emp-alerts"></div>
+
+      <!-- Employee KPIs -->
+      <div class="emp-kpi-row">
+        <div class="emp-kpi">
+          <div class="emp-kpi-icon" style="background:rgba(249,115,22,.15);color:#f97316"><i class="fas fa-box-open"></i></div>
+          <div><div class="emp-kpi-val" id="ek-products">—</div><div class="emp-kpi-label">Produits</div></div>
+        </div>
+        <div class="emp-kpi">
+          <div class="emp-kpi-icon" style="background:rgba(34,197,94,.15);color:#22c55e"><i class="fas fa-layer-group"></i></div>
+          <div><div class="emp-kpi-val" id="ek-units">—</div><div class="emp-kpi-label">Unités en stock</div></div>
+        </div>
+        <div class="emp-kpi">
+          <div class="emp-kpi-icon" style="background:rgba(239,68,68,.15);color:#ef4444"><i class="fas fa-exclamation-circle"></i></div>
+          <div><div class="emp-kpi-val" id="ek-out">—</div><div class="emp-kpi-label">Ruptures</div></div>
+        </div>
+        <div class="emp-kpi">
+          <div class="emp-kpi-icon" style="background:rgba(234,179,8,.15);color:#eab308"><i class="fas fa-exclamation-triangle"></i></div>
+          <div><div class="emp-kpi-val" id="ek-low">—</div><div class="emp-kpi-label">Stocks faibles</div></div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="quick-actions">
+        <button class="qa-btn primary" onclick="openStockIn()">
+          <i class="fas fa-plus-circle"></i> Entrée de stock
+        </button>
+        <a href="stock.html" class="qa-btn secondary">
+          <i class="fas fa-layer-group"></i> Gestion stock
+        </a>
+        <a href="movements.html" class="qa-btn secondary">
+          <i class="fas fa-exchange-alt"></i> Mouvements
+        </a>
+        <a href="products.html" class="qa-btn secondary">
+          <i class="fas fa-search"></i> Catalogue
+        </a>
+      </div>
+
+      <!-- Products table -->
+      <div class="emp-table-wrap">
+        <div class="emp-table-header">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem">
+            <i class="fas fa-box-open" style="color:#f97316;margin-right:7px"></i>Produits
+          </div>
+          <div class="emp-search">
+            <i class="fas fa-search"></i>
+            <input type="text" id="emp-search" placeholder="Rechercher…" autocomplete="off">
+          </div>
+          <select id="emp-filter-stock" style="padding:7px 10px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:.82rem;cursor:pointer">
+            <option value="">Tous</option>
+            <option value="out">Rupture</option>
+            <option value="low">Faible</option>
+            <option value="ok">En stock</option>
+          </select>
+        </div>
+        <table class="emp-table">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Marque</th>
+              <th>Prix</th>
+              <th>Stock</th>
+              <th>Statut</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="emp-products-tbody">
+            <tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> Chargement…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div><!-- /#dash-employee -->
+
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- ── STOCK IN MODAL (employee) ───────────────────────── -->
+<div class="stock-in-modal" id="stock-in-modal">
+  <div class="sim-box">
+    <h3><i class="fas fa-plus-circle" style="color:#f97316;margin-right:8px"></i>Entrée de stock</h3>
+    <div class="sim-field">
+      <label>Produit</label>
+      <select id="sim-product"></select>
+    </div>
+    <div class="sim-field">
+      <label>Taille</label>
+      <select id="sim-size"><option value="">Toutes les tailles</option></select>
+    </div>
+    <div class="sim-field">
+      <label>Quantité</label>
+      <input type="number" id="sim-qty" min="1" value="1" placeholder="Quantité à ajouter">
+    </div>
+    <div class="sim-field">
+      <label>Note</label>
+      <input type="text" id="sim-note" placeholder="ex: Réception fournisseur…">
+    </div>
+    <div class="sim-actions">
+      <button class="sim-cancel" onclick="closeStockIn()">Annuler</button>
+      <button class="sim-save"   onclick="saveStockIn()"><i class="fas fa-check"></i> Confirmer l'entrée</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCRIPTS ───────────────────────────────────────────── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+/* ════════════════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════════════════ */
+initPage('Dashboard', 'Vue globale');
+
+const ME    = Auth.getUser();
+const TOKEN = Auth.getToken();
+const isAdm = Auth.isAdmin();
+
+/* Mettre le bon dashboard visible */
+document.getElementById(isAdm ? 'dash-admin' : 'dash-employee').classList.add('active');
+
+/* ════════════════════════════════════════════════════════
+   API HELPER
+════════════════════════════════════════════════════════ */
+async function api(path) {
+  try {
+    const r = await fetch('http://localhost:3000' + path, {
+      headers: { Authorization: 'Bearer ' + TOKEN }
+    });
+    if (r.status === 401) { logout(); return null; }
+    return r.json();
+  } catch(e) {
+    console.error('[API]', path, e.message);
+    return null;
+  }
+}
+
+/* ════════════════════════════════════════════════════════
+   SHARED HELPERS
+════════════════════════════════════════════════════════ */
+function stockStatus(qty) { return qty === 0 ? 'out' : qty <= 5 ? 'low' : 'ok'; }
+function stockLabel(s)    { return {ok:'En stock', low:'Faible', out:'Rupture'}[s]; }
+function fmtDate(d)       { return String(d||'').slice(0,16).replace('T',' '); }
+function fmtNum(n)        { return Number(n||0).toLocaleString('fr-MA'); }
+
+function alertStrip(cid, stats) {
+  const c = document.getElementById(cid); if (!c) return;
+  let h = '';
+  if (stats.outOfStock > 0) h += `<a href="products.html?filter=out" class="alert-pill danger"><i class="fas fa-exclamation-circle"></i>${stats.outOfStock} rupture${stats.outOfStock>1?'s':''}</a>`;
+  if (stats.lowStock   > 0) h += `<a href="products.html?filter=low" class="alert-pill warning"><i class="fas fa-exclamation-triangle"></i>${stats.lowStock} faible${stats.lowStock>1?'s':''}</a>`;
+  if (!h) h = `<div class="alert-pill success"><i class="fas fa-check-circle"></i>Tous les stocks sont en bon état</div>`;
+  c.innerHTML = h;
+}
+
+/* ════════════════════════════════════════════════════════
+   ADMIN DASHBOARD
+════════════════════════════════════════════════════════ */
+const LOG_ICONS = {
+  LOGIN:'fa-sign-in-alt', ADD_PRODUCT:'fa-plus-circle', UPDATE_PRODUCT:'fa-pen',
+  DELETE_PRODUCT:'fa-trash-alt', STOCK_IN:'fa-arrow-down',
+  STOCK_OUT:'fa-arrow-up', STOCK_ADJUST:'fa-arrows-alt-v',
+};
+
+async function loadAdminDash() {
+  /* Greeting */
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+  document.getElementById('admin-greeting').textContent =
+    `${greet}, ${ME ? ME.name.split(' ')[0] : ''} 👋`;
+
+  /* Stats via API */
+  const [stats, users, logsData] = await Promise.all([
+    api('/api/stats'),
+    api('/api/users'),
+    api('/api/logs?limit=20'),
+  ]);
+
+  /* KPI Cards */
+  if (stats) {
+    document.getElementById('k-products').textContent = stats.total     || 0;
+    document.getElementById('k-units').textContent    = fmtNum(stats.totalUnits);
+    document.getElementById('k-value').textContent    = fmtNum(stats.totalValue);
+    document.getElementById('k-out').textContent      = stats.outOfStock || 0;
+    alertStrip('admin-alerts', stats);
+  }
+  if (users) {
+    document.getElementById('k-users').textContent = users.filter(u => u.is_active).length;
+  }
+  if (logsData) {
+    document.getElementById('k-logs').textContent = logsData.total || 0;
+  }
+
+  /* Charts */
+  Charts.renderBrandChart('brand-chart');
+  Charts.renderStockChart('stock-chart', 8);
+
+  /* Top products */
+  renderTopProducts('top-products-list', 5);
+
+  /* Users panel */
+  if (users && users.length) {
+    document.getElementById('admin-users-list').innerHTML = users.map(u => {
+      const av = u.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      return `
+        <div class="user-row">
+          <div class="ur-av ${u.role}">${av}</div>
+          <div>
+            <div class="ur-name">${u.name}</div>
+            <div class="ur-email">${u.email}</div>
+          </div>
+          <span class="ur-role ${u.role}">${u.role === 'admin' ? 'Admin' : 'Employé'}</span>
+          <div class="ur-status ${u.is_active ? '' : 'inactive'}" title="${u.is_active ? 'Actif' : 'Inactif'}"></div>
+        </div>`;
+    }).join('');
+  } else {
+    document.getElementById('admin-users-list').innerHTML =
+      '<div style="padding:20px;text-align:center;color:var(--text-muted)">Aucun utilisateur</div>';
+  }
+
+  /* Logs panel */
+  const logs = logsData ? logsData.logs : [];
+  if (logs.length) {
+    document.getElementById('admin-logs-list').innerHTML = logs.map(l => {
+      const icon = LOG_ICONS[l.action] || 'fa-circle';
+      const ago  = timeAgo(l.created_at);
+      return `
+        <div class="log-row">
+          <div class="log-dot ${l.action}"><i class="fas ${icon}"></i></div>
+          <div style="flex:1;min-width:0">
+            <div class="log-action">${l.action}</div>
+            <div class="log-who">${l.user_name}</div>
+            <div class="log-target">${l.target || ''}</div>
+          </div>
+          <div class="log-time">${ago}</div>
+        </div>`;
+    }).join('');
+  } else {
+    document.getElementById('admin-logs-list').innerHTML =
+      '<div style="padding:20px;text-align:center;color:var(--text-muted)">Aucune activité</div>';
+  }
+}
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '—';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)  return 'À l\'instant';
+  if (m < 60) return `Il y a ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `Il y a ${h}h`;
+  return `Il y a ${Math.floor(h/24)}j`;
+}
+
+/* ════════════════════════════════════════════════════════
+   EMPLOYEE DASHBOARD
+════════════════════════════════════════════════════════ */
+let empProducts = [];
+
+async function loadEmpDash() {
+  /* Greeting */
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+  document.getElementById('emp-greeting').textContent =
+    `${greet}, ${ME ? ME.name.split(' ')[0] : ''} 👋`;
+
+  /* Stats + Products */
+  const [stats, products] = await Promise.all([
+    api('/api/stats'),
+    api('/api/products'),
+  ]);
+
+  if (stats) {
+    document.getElementById('ek-products').textContent = stats.total     || 0;
+    document.getElementById('ek-units').textContent    = fmtNum(stats.totalUnits);
+    document.getElementById('ek-out').textContent      = stats.outOfStock || 0;
+    document.getElementById('ek-low').textContent      = stats.lowStock   || 0;
+    alertStrip('emp-alerts', stats);
+  }
+
+  if (products) {
+    empProducts = products;
+    renderEmpTable(products);
+    populateStockInSelect(products);
+  }
+}
+
+function renderEmpTable(products) {
+  const search = (document.getElementById('emp-search')?.value || '').toLowerCase();
+  const filter = document.getElementById('emp-filter-stock')?.value || '';
+  const filtered = products.filter(p => {
+    const st = stockStatus(p.qty);
+    if (search && !p.name.toLowerCase().includes(search) && !p.sku.toLowerCase().includes(search) && !p.brand.toLowerCase().includes(search)) return false;
+    if (filter && st !== filter) return false;
+    return true;
+  });
+
+  const tbody = document.getElementById('emp-products-tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--text-muted)"><i class="fas fa-search"></i> Aucun produit trouvé</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.slice(0, 50).map(p => {
+    const st = stockStatus(p.qty);
+    const imgHtml = typeof p.img === 'string' && p.img.startsWith('data:')
+      ? `<div class="emp-thumb"><img src="${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:6px" alt=""></div>`
+      : `<div class="emp-thumb">${p.img || '👟'}</div>`;
+    return `
+      <tr>
+        <td>
+          <div class="emp-prod-cell">
+            ${imgHtml}
+            <div>
+              <div style="font-weight:600;font-size:.85rem">${p.name}</div>
+              <div style="font-size:.72rem;color:var(--text-muted)">${p.sku}</div>
+            </div>
+          </div>
+        </td>
+        <td><span style="font-size:.8rem;background:var(--surface-2);padding:.2rem .6rem;border-radius:6px">${p.brand}</span></td>
+        <td style="font-weight:700;color:#f97316">${fmtNum(p.price)} MAD</td>
+        <td style="font-weight:700">${p.qty}</td>
+        <td><span class="stock-badge-sm ${st}"><i class="fas fa-circle" style="font-size:.5rem"></i>${stockLabel(st)}</span></td>
+        <td>
+          <button onclick="openStockIn(${p.id})"
+            style="background:rgba(249,115,22,.15);color:#f97316;border:none;border-radius:7px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">
+            <i class="fas fa-plus"></i> Stock
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+/* Filters for employee table */
+document.getElementById('emp-search')?.addEventListener('input', () => renderEmpTable(empProducts));
+document.getElementById('emp-filter-stock')?.addEventListener('change', () => renderEmpTable(empProducts));
+
+/* ════════════════════════════════════════════════════════
+   STOCK IN MODAL (employee)
+════════════════════════════════════════════════════════ */
+function populateStockInSelect(products) {
+  const sel = document.getElementById('sim-product');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Sélectionner un produit…</option>' +
+    products.map(p => `<option value="${p.id}" data-sizes='${JSON.stringify(p.sizes||[])}'>${p.name}</option>`).join('');
+  sel.onchange = function() {
+    const opt = this.selectedOptions[0];
+    const sizes = JSON.parse(opt?.dataset?.sizes || '[]');
+    const ssel = document.getElementById('sim-size');
+    ssel.innerHTML = '<option value="">Toutes les tailles</option>' +
+      sizes.map(s => `<option value="${s}">${s}</option>`).join('');
+  };
+}
+
+function openStockIn(productId) {
+  const sel = document.getElementById('sim-product');
+  if (productId && sel) {
+    sel.value = productId;
+    sel.dispatchEvent(new Event('change'));
+  }
+  document.getElementById('sim-qty').value  = 1;
+  document.getElementById('sim-note').value = '';
+  document.getElementById('stock-in-modal').classList.add('open');
+}
+
+function closeStockIn() {
+  document.getElementById('stock-in-modal').classList.remove('open');
+}
+
+async function saveStockIn() {
+  const productId = +document.getElementById('sim-product').value;
+  const size      = document.getElementById('sim-size').value ? +document.getElementById('sim-size').value : null;
+  const qty       = +document.getElementById('sim-qty').value;
+  const note      = document.getElementById('sim-note').value.trim() || 'Entrée de stock';
+  const p         = empProducts.find(x => x.id === productId);
+
+  if (!productId) { Toast.error('Sélectionnez un produit.'); return; }
+  if (!qty || qty < 1) { Toast.error('Quantité invalide.'); return; }
+
+  const btn = document.querySelector('.sim-save');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+
+  try {
+    const r = await fetch('/api/movements', {
+      method:'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + TOKEN },
+      body: JSON.stringify({
+        product_id:   productId,
+        product_name: p ? p.name : '',
+        brand:        p ? p.brand : '',
+        type:         'in',
+        size,
+        quantity:     qty,
+        note,
+      })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Erreur');
+    Toast.success(`+${qty} unité${qty>1?'s':''} ajoutée${qty>1?'s':''} avec succès !`);
+    closeStockIn();
+    loadEmpDash(); /* refresh */
+  } catch(e) {
+    Toast.error(e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Confirmer l\'entrée';
+  }
+}
+
+/* Close modal on backdrop click */
+document.getElementById('stock-in-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeStockIn();
+});
+
+/* ════════════════════════════════════════════════════════
+   BOOT
+════════════════════════════════════════════════════════ */
+if (isAdm) {
+  loadAdminDash();
+} else {
+  loadEmpDash();
+}
+</script>
+
+</body>
+</html>

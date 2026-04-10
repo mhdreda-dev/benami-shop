@@ -1,0 +1,25 @@
+{
+  "name": "benami-shop",
+  "version": "1.0.0",
+  "description": "Ben Ami Shop — Gestion inventaire chaussures",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "NODE_ENV=development node server.js",
+    "prod": "NODE_ENV=production node server.js",
+    "setup": "npm install && node -e \"console.log('✅ Dépendances installées. Copiez .env.example en .env et remplissez JWT_SECRET.')\"",
+    "generate-secret": "node -e \"console.log('JWT_SECRET=' + require('crypto').randomBytes(48).toString('hex'))\"",
+    "health": "node -e \"require('http').get('http://localhost:' + (process.env.PORT||3000) + '/api/stats', r => { console.log('Status:', r.statusCode); r.resume(); }).on('error', e => { console.error('Serveur injoignable:', e.message); process.exit(1); })\""
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "sql.js": "^1.14.1"
+  },
+  "keywords": ["inventory", "sqlite", "nodejs", "shoes"],
+  "license": "UNLICENSED",
+  "private": true
+}

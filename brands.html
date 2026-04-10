@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marques — Ben Ami Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .brands-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .brand-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:border-color var(--t-fast),transform var(--t-fast);display:flex;flex-direction:column;gap:14px}
+    .brand-card:hover{border-color:var(--border-2);transform:translateY(-2px)}
+    .brand-header{display:flex;align-items:center;gap:13px}
+    .brand-logo{width:48px;height:48px;border-radius:12px;background:var(--accent-dim);border:1px solid rgba(249,115,22,.2);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:var(--accent);flex-shrink:0}
+    .brand-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:800}
+    .brand-country{font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:5px}
+    .brand-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .brand-stat{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px}
+    .brand-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:18px;line-height:1;margin-bottom:3px}
+    .brand-stat-label{font-size:11px;color:var(--text-muted)}
+    .brand-footer{display:flex;gap:8px}
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-wrapper">
+    <header class="topbar" id="topbar"></header>
+    <main class="page-content">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <div><h1>Marques</h1><p>Toutes les marques de votre catalogue</p></div>
+        <button class="btn btn-primary" onclick="Modal.open('add-brand-modal')" data-role="admin"><i class="fas fa-plus"></i> Nouvelle marque</button>
+      </div>
+      <div class="alert-strip" id="brands-summary"></div>
+      <div class="brands-grid" id="brands-grid"></div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="add-brand-modal">
+    <div class="modal" style="width:420px">
+      <div class="modal-header"><div class="modal-title">Ajouter une marque</div><div class="modal-close" onclick="Modal.close('add-brand-modal')"><i class="fas fa-times"></i></div></div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group span-2"><label class="form-label">Nom *</label><input class="form-input" id="nb-name" placeholder="ex: Salomon"></div>
+          <div class="form-group span-2"><label class="form-label">Pays</label><input class="form-input" id="nb-country" placeholder="ex: France"></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-ghost" onclick="Modal.close('add-brand-modal')">Annuler</button><button class="btn btn-primary" onclick="addBrand()"><i class="fas fa-save"></i> Ajouter</button></div>
+    </div>
+  </div>
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    initPage('Marques', 'Catalogue marques');
+    const FLAGS={'USA':'🇺🇸','Germany':'🇩🇪','UK':'🇬🇧','France':'🇫🇷','Italy':'🇮🇹','Japan':'🇯🇵','Morocco':'🇲🇦'};
+
+    function renderBrands(){
+      const brands=DB.brands.getAll(),products=DB.products.getAll();
+      const bs={};
+      products.forEach(p=>{if(!bs[p.brand])bs[p.brand]={count:0,units:0,value:0,out:0};bs[p.brand].count++;bs[p.brand].units+=p.qty;bs[p.brand].value+=p.price*p.qty;if(p.qty===0)bs[p.brand].out++;});
+      const stats=DB.products.getStats();
+      document.getElementById('brands-summary').innerHTML=`<div class="alert-pill"><i class="fas fa-tag"></i>${brands.length} marques</div><div class="alert-pill"><i class="fas fa-shoe-prints"></i>${products.length} modèles</div><div class="alert-pill success"><i class="fas fa-coins"></i>${stats.totalValue.toLocaleString()} MAD</div>`;
+      const grid=document.getElementById('brands-grid');
+      if(!brands.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-tag"></i><h3>Aucune marque</h3><p>Ajoutez votre première marque.</p></div>';return;}
+      grid.innerHTML=brands.map(b=>{
+        const s=bs[b.name]||{count:0,units:0,value:0,out:0};
+        const flag=FLAGS[b.country]||'🌍';
+        return`<div class="brand-card">
+          <div class="brand-header"><div class="brand-logo">${b.name[0]}</div><div><div class="brand-name">${b.name}</div><div class="brand-country"><span>${flag}</span>${b.country||'—'}</div></div></div>
+          <div class="brand-stats">
+            <div class="brand-stat"><div class="brand-stat-val">${s.count}</div><div class="brand-stat-label">modèles</div></div>
+            <div class="brand-stat"><div class="brand-stat-val">${s.units}</div><div class="brand-stat-label">unités</div></div>
+            <div class="brand-stat" style="grid-column:1/-1"><div class="brand-stat-val" style="color:var(--accent)">${s.value.toLocaleString()} MAD</div><div class="brand-stat-label">valeur stock</div></div>
+          </div>
+          ${s.out>0?`<div class="alert-pill danger" style="font-size:11px;padding:5px 12px"><i class="fas fa-exclamation-circle"></i>${s.out} rupture${s.out>1?'s':''}</div>`:''}
+          <div class="brand-footer">
+            <a href="products.html?brand=${encodeURIComponent(b.name)}" class="btn btn-ghost btn-sm" style="flex:1;justify-content:center"><i class="fas fa-box-open"></i> Produits</a>
+            <a href="add-product.html" class="btn btn-primary btn-sm" style="flex:1;justify-content:center" data-role="admin"><i class="fas fa-plus"></i> Ajouter</a>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function addBrand(){
+      const name=document.getElementById('nb-name').value.trim();
+      const country=document.getElementById('nb-country').value.trim();
+      if(!name){Toast.error('Nom requis.');return;}
+      if(DB.brands.getAll().some(b=>b.name.toLowerCase()===name.toLowerCase())){Toast.error('Marque déjà existante.');return;}
+      DB.brands.add(name,country);
+      Modal.close('add-brand-modal');
+      document.getElementById('nb-name').value='';document.getElementById('nb-country').value='';
+      renderBrands();Toast.success(`"${name}" ajoutée !`);
+    }
+
+    Modal.bindBackdrop('add-brand-modal');
+    renderBrands();
+    Auth.applyRoles(); // appliquer après le rendu
+  </script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BEN AMI SHOP — Connexion</title>
+  <link rel="stylesheet" href="assets/style.css" />
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f4f6fb; }
+    .auth-card {
+      background:#fff; border-radius:14px; box-shadow:0 4px 32px rgba(0,0,0,.10);
+      padding:2.5rem 2rem; width:100%; max-width:400px;
+    }
+    .auth-card h1 { text-align:center; margin-bottom:.3rem; font-size:1.6rem; color:#1a1a2e; }
+    .auth-card p.sub { text-align:center; color:#888; margin-bottom:2rem; font-size:.9rem; }
+    .form-group { margin-bottom:1.2rem; }
+    .form-group label { display:block; margin-bottom:.4rem; font-weight:600; color:#333; font-size:.9rem; }
+    .form-group input {
+      width:100%; padding:.75rem 1rem; border:1.5px solid #dde1eb; border-radius:8px;
+      font-size:1rem; transition:border .2s; box-sizing:border-box;
+    }
+    .form-group input:focus { border-color:#4f46e5; outline:none; }
+    .btn-primary {
+      width:100%; padding:.8rem; background:#4f46e5; color:#fff; border:none;
+      border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; transition:background .2s;
+    }
+    .btn-primary:hover { background:#3730a3; }
+    .btn-primary:disabled { background:#a5b4fc; cursor:not-allowed; }
+    .msg { margin-top:1rem; text-align:center; font-size:.9rem; padding:.6rem; border-radius:6px; display:none; }
+    .msg.error { background:#fee2e2; color:#b91c1c; display:block; }
+    .msg.success { background:#dcfce7; color:#15803d; display:block; }
+    .auth-footer { text-align:center; margin-top:1.5rem; font-size:.9rem; color:#666; }
+    .auth-footer a { color:#4f46e5; text-decoration:none; font-weight:600; }
+    .logo { text-align:center; font-size:2rem; margin-bottom:.5rem; }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="logo">👟</div>
+    <h1>Ben Ami Shop</h1>
+    <p class="sub">Connectez-vous à votre espace</p>
+
+    <div class="form-group">
+      <label for="email">Adresse e-mail</label>
+      <input type="email" id="email" placeholder="admin@benami.shop" autocomplete="email" />
+    </div>
+    <div class="form-group">
+      <label for="password">Mot de passe</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+
+    <button class="btn-primary" id="btnLogin">Se connecter</button>
+    <div class="msg" id="msg"></div>
+
+    <div class="auth-footer">
+      Pas encore de compte ? <a href="register.html">S'inscrire</a>
+    </div>
+  </div>
+
+  <script>
+    // Rediriger si déjà connecté
+    if (localStorage.getItem('token')) {
+      window.location.href = '/';
+    }
+
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const msg      = document.getElementById('msg');
+      const btn      = document.getElementById('btnLogin');
+
+      msg.className = 'msg';
+      msg.textContent = '';
+
+      if (!email || !password) {
+        msg.className = 'msg error';
+        msg.textContent = 'Veuillez remplir tous les champs.';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Connexion...';
+
+      try {
+        const res  = await fetch('/api/login', {
+          method : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          msg.className   = 'msg error';
+          msg.textContent = data.error || 'Identifiants incorrects.';
+        } else {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user',  JSON.stringify(data.user));
+          msg.className   = 'msg success';
+          msg.textContent = 'Connexion réussie ! Redirection…';
+          setTimeout(() => { window.location.href = '/'; }, 800);
+        }
+      } catch (e) {
+        msg.className   = 'msg error';
+        msg.textContent = 'Erreur réseau. Réessayez.';
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Se connecter';
+      }
+    });
+
+    // Valider avec Entrée
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('btnLogin').click();
+    });
+  </script>
+</body>
+</html>

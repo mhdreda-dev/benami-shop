@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Logs — Ben Ami Shop</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    /* ── KPI cards ── */
+    .log-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:1.5rem; }
+    .log-kpi  { background:#fff; border:1px solid #eee; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; }
+    .log-kpi-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+    .log-kpi-val  { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; line-height:1; }
+    .log-kpi-label{ font-size:11px; color:#888; margin-top:2px; }
+
+    /* ── Toolbar ── */
+    .logs-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
+    .logs-toolbar select, .logs-toolbar input[type=date] {
+      padding:.5rem .8rem; border:1.5px solid #dde1eb; border-radius:8px;
+      font-size:.85rem; background:#fff; color:#333; cursor:pointer;
+    }
+    .logs-toolbar select:focus, .logs-toolbar input:focus { border-color:#4f46e5; outline:none; }
+    .btn-refresh { background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:.5rem 1rem; font-size:.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.4rem; }
+    .btn-refresh:hover { background:#3730a3; }
+    .btn-purge  { background:#fee2e2; color:#b91c1c; border:none; border-radius:8px; padding:.5rem 1rem; font-size:.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.4rem; margin-left:auto; }
+    .btn-purge:hover { background:#b91c1c; color:#fff; }
+
+    /* ── Table ── */
+    .logs-table-wrap { background:#fff; border-radius:14px; box-shadow:0 2px 16px rgba(0,0,0,.07); overflow:hidden; }
+    table.logs-table { width:100%; border-collapse:collapse; font-size:.875rem; }
+    table.logs-table thead th { background:#f8f9ff; padding:.65rem 1rem; text-align:left; font-size:.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #eee; white-space:nowrap; }
+    table.logs-table tbody tr { border-bottom:1px solid #f5f5f5; transition:background .12s; }
+    table.logs-table tbody tr:hover { background:#fafafe; }
+    table.logs-table td { padding:.7rem 1rem; vertical-align:middle; }
+
+    /* ── Action badges ── */
+    .action-badge { display:inline-flex; align-items:center; gap:.3rem; padding:.22rem .65rem; border-radius:999px; font-size:.72rem; font-weight:700; white-space:nowrap; }
+    .action-badge.LOGIN          { background:#ede9fe; color:#5b21b6; }
+    .action-badge.ADD_PRODUCT    { background:#dcfce7; color:#15803d; }
+    .action-badge.UPDATE_PRODUCT { background:#dbeafe; color:#1d4ed8; }
+    .action-badge.DELETE_PRODUCT { background:#fee2e2; color:#b91c1c; }
+    .action-badge.STOCK_IN       { background:#d1fae5; color:#065f46; }
+    .action-badge.STOCK_OUT      { background:#fff7ed; color:#c2410c; }
+    .action-badge.STOCK_ADJUST   { background:#fef9c3; color:#854d0e; }
+    .action-badge.LOGS_PURGED    { background:#f3f4f6; color:#374151; }
+
+    /* ── Role badge ── */
+    .role-pill { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .55rem; border-radius:999px; font-size:.7rem; font-weight:700; }
+    .role-pill.admin    { background:#ede9fe; color:#5b21b6; }
+    .role-pill.employee { background:#fff7ed; color:#c2410c; }
+
+    /* ── User cell ── */
+    .user-cell { display:flex; align-items:center; gap:.6rem; }
+    .u-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; color:#fff; flex-shrink:0; }
+    .u-av.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
+    .u-av.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
+    .u-av.system   { background:#6b7280; }
+
+    /* ── Target cell ── */
+    .target-cell { max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#555; font-size:.82rem; }
+
+    /* ── Pagination ── */
+    .logs-pagination { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; border-top:1px solid #f0f0f0; background:#fafafe; flex-wrap:wrap; gap:.5rem; }
+    .logs-pagination span { font-size:.82rem; color:#888; }
+    .page-btns { display:flex; gap:4px; }
+    .page-btn-l { padding:.35rem .75rem; border:1px solid #dde1eb; border-radius:6px; background:#fff; font-size:.82rem; cursor:pointer; color:#555; }
+    .page-btn-l:hover:not(:disabled) { border-color:#4f46e5; color:#4f46e5; }
+    .page-btn-l:disabled { opacity:.4; cursor:not-allowed; }
+    .page-btn-l.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+
+    /* ── Empty / loading ── */
+    .logs-empty { text-align:center; padding:3rem; color:#aaa; }
+    .logs-empty i { font-size:2.5rem; display:block; margin-bottom:.75rem; }
+
+    /* ── Live indicator ── */
+    .live-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; animation:pulse 1.5s infinite; margin-right:4px; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+    /* ── Confirm overlay ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.open { display:flex; }
+    .modal-box { background:#fff; border-radius:14px; padding:2rem; max-width:380px; width:100%; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,.2); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-wrapper">
+    <header class="topbar" id="topbar"></header>
+    <main class="page-content">
+
+      <div class="page-header">
+        <h1>Activity Logs <span class="live-dot"></span></h1>
+        <p>Historique complet de toutes les actions utilisateurs</p>
+      </div>
+
+      <!-- KPI row -->
+      <div class="log-kpis" id="log-kpis">
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#ede9fe;color:#5b21b6"><i class="fas fa-list-alt"></i></div><div><div class="log-kpi-val" id="kpi-total">—</div><div class="log-kpi-label">Total logs</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#dcfce7;color:#15803d"><i class="fas fa-plus-circle"></i></div><div><div class="log-kpi-val" id="kpi-add">—</div><div class="log-kpi-label">Produits ajoutés</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#fee2e2;color:#b91c1c"><i class="fas fa-trash-alt"></i></div><div><div class="log-kpi-val" id="kpi-del">—</div><div class="log-kpi-label">Suppressions</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#d1fae5;color:#065f46"><i class="fas fa-arrow-down"></i></div><div><div class="log-kpi-val" id="kpi-in">—</div><div class="log-kpi-label">Entrées stock</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#fff7ed;color:#c2410c"><i class="fas fa-arrow-up"></i></div><div><div class="log-kpi-val" id="kpi-out">—</div><div class="log-kpi-label">Sorties stock</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fas fa-sign-in-alt"></i></div><div><div class="log-kpi-val" id="kpi-login">—</div><div class="log-kpi-label">Connexions</div></div></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="logs-toolbar">
+        <select id="f-action">
+          <option value="">Toutes les actions</option>
+          <option value="LOGIN">LOGIN</option>
+          <option value="ADD_PRODUCT">ADD_PRODUCT</option>
+          <option value="UPDATE_PRODUCT">UPDATE_PRODUCT</option>
+          <option value="DELETE_PRODUCT">DELETE_PRODUCT</option>
+          <option value="STOCK_IN">STOCK_IN</option>
+          <option value="STOCK_OUT">STOCK_OUT</option>
+          <option value="STOCK_ADJUST">STOCK_ADJUST</option>
+        </select>
+
+        <select id="f-user">
+          <option value="">Tous les utilisateurs</option>
+        </select>
+
+        <input type="date" id="f-from" title="Depuis" />
+        <input type="date" id="f-to"   title="Jusqu'au" />
+
+        <button class="btn-refresh" onclick="loadLogs()">
+          <i class="fas fa-sync-alt"></i> Actualiser
+        </button>
+
+        <button class="btn-purge" onclick="confirmPurge()">
+          <i class="fas fa-trash"></i> Purger
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="logs-table-wrap">
+        <table class="logs-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Utilisateur</th>
+              <th>Rôle</th>
+              <th>Action</th>
+              <th>Cible</th>
+              <th>Date / Heure</th>
+            </tr>
+          </thead>
+          <tbody id="logs-tbody">
+            <tr><td colspan="6"><div class="logs-empty"><i class="fas fa-spinner fa-spin"></i>Chargement…</div></td></tr>
+          </tbody>
+        </table>
+
+        <div class="logs-pagination">
+          <span id="logs-info">—</span>
+          <div class="page-btns">
+            <button class="page-btn-l" id="btn-prev" onclick="changePage(-1)" disabled><i class="fas fa-chevron-left"></i></button>
+            <button class="page-btn-l active" id="btn-page">1</button>
+            <button class="page-btn-l" id="btn-next" onclick="changePage(1)" disabled><i class="fas fa-chevron-right"></i></button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Confirm purge modal -->
+  <div class="modal-overlay" id="purge-modal">
+    <div class="modal-box">
+      <i class="fas fa-exclamation-triangle" style="font-size:2.2rem;color:#b91c1c;display:block;margin-bottom:.75rem"></i>
+      <h3 style="margin-bottom:.5rem">Purger tous les logs ?</h3>
+      <p style="color:#666;font-size:.9rem;margin-bottom:1.5rem">Cette action supprime définitivement tout l'historique. Elle sera elle-même enregistrée.</p>
+      <div style="display:flex;gap:.75rem;justify-content:center">
+        <button onclick="closePurge()" style="padding:.6rem 1.4rem;border:1px solid #dde1eb;border-radius:8px;background:#fff;cursor:pointer;font-weight:600">Annuler</button>
+        <button onclick="doPurge()" style="padding:.6rem 1.4rem;background:#b91c1c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700">Purger</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/db.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script>
+    /* ── Guard : admin only ─────────────────────────────────── */
+    const TOKEN = localStorage.getItem('token');
+    const ME    = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!TOKEN || !ME) window.location.href = '/login.html';
+
+    initPage('Activity Logs', 'Audit');
+
+    if (ME.role !== 'admin') {
+      document.querySelector('.page-content').innerHTML = `
+        <div style="text-align:center;padding:4rem">
+          <i class="fas fa-lock" style="font-size:3rem;color:#b91c1c;display:block;margin-bottom:1rem"></i>
+          <h2>Accès réservé aux administrateurs</h2>
+        </div>`;
+    }
+
+    /* ── State ──────────────────────────────────────────────── */
+    const PER_PAGE = 50;
+    let currentPage = 1;
+    let totalLogs   = 0;
+    let allUsers    = [];
+
+    /* ── API helper ─────────────────────────────────────────── */
+    async function api(path, opts = {}) {
+      const r = await fetch('' + path, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+      });
+      if (r.status === 401) { logout(); return null; }
+      return r.json();
+    }
+
+    /* ── Action meta ────────────────────────────────────────── */
+    const ACTION_META = {
+      LOGIN:          { icon:'fa-sign-in-alt',   label:'LOGIN' },
+      ADD_PRODUCT:    { icon:'fa-plus-circle',   label:'ADD_PRODUCT' },
+      UPDATE_PRODUCT: { icon:'fa-pen',           label:'UPDATE_PRODUCT' },
+      DELETE_PRODUCT: { icon:'fa-trash-alt',     label:'DELETE_PRODUCT' },
+      STOCK_IN:       { icon:'fa-arrow-down',    label:'STOCK_IN' },
+      STOCK_OUT:      { icon:'fa-arrow-up',      label:'STOCK_OUT' },
+      STOCK_ADJUST:   { icon:'fa-arrows-alt-v',  label:'STOCK_ADJUST' },
+      LOGS_PURGED:    { icon:'fa-broom',         label:'LOGS_PURGED' },
+    };
+
+    /* ── Load users for filter ──────────────────────────────── */
+    async function loadUsers() {
+      const data = await api('/api/users');
+      if (!data) return;
+      allUsers = data;
+      const sel = document.getElementById('f-user');
+      sel.innerHTML = '<option value="">Tous les utilisateurs</option>' +
+        data.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+    }
+
+    /* ── Load KPI stats ─────────────────────────────────────── */
+    async function loadKPIs() {
+      const data = await api('/api/logs?limit=500');
+      if (!data) return;
+      const logs = data.logs || [];
+      const cnt  = (action) => logs.filter(l => l.action === action).length;
+      document.getElementById('kpi-total').textContent = data.total;
+      document.getElementById('kpi-add').textContent   = cnt('ADD_PRODUCT');
+      document.getElementById('kpi-del').textContent   = cnt('DELETE_PRODUCT');
+      document.getElementById('kpi-in').textContent    = cnt('STOCK_IN');
+      document.getElementById('kpi-out').textContent   = cnt('STOCK_OUT');
+      document.getElementById('kpi-login').textContent = cnt('LOGIN');
+    }
+
+    /* ── Load logs ──────────────────────────────────────────── */
+    async function loadLogs() {
+      const action = document.getElementById('f-action').value;
+      const userId = document.getElementById('f-user').value;
+      const from   = document.getElementById('f-from').value;
+      const to     = document.getElementById('f-to').value;
+
+      let qs = `?limit=${PER_PAGE}&offset=${(currentPage - 1) * PER_PAGE}`;
+      if (action) qs += '&action=' + action;
+      if (userId) qs += '&user_id=' + userId;
+      if (from)   qs += '&from=' + from;
+      if (to)     qs += '&to=' + to;
+
+      document.getElementById('logs-tbody').innerHTML =
+        '<tr><td colspan="6"><div class="logs-empty"><i class="fas fa-spinner fa-spin"></i> Chargement…</div></td></tr>';
+
+      const data = await api('/api/logs' + qs);
+      if (!data) return;
+
+      totalLogs = data.total;
+      const logs = data.logs || [];
+      const totalPages = Math.max(1, Math.ceil(totalLogs / PER_PAGE));
+
+      /* Info */
+      const from_ = (currentPage - 1) * PER_PAGE + 1;
+      const to_   = Math.min(currentPage * PER_PAGE, totalLogs);
+      document.getElementById('logs-info').textContent =
+        totalLogs > 0 ? `${from_}–${to_} sur ${totalLogs} log${totalLogs > 1 ? 's' : ''}` : '0 log';
+
+      /* Pagination btns */
+      document.getElementById('btn-prev').disabled = currentPage <= 1;
+      document.getElementById('btn-next').disabled = currentPage >= totalPages;
+      document.getElementById('btn-page').textContent = `${currentPage} / ${totalPages}`;
+
+      if (!logs.length) {
+        document.getElementById('logs-tbody').innerHTML =
+          '<tr><td colspan="6"><div class="logs-empty"><i class="fas fa-search"></i>Aucun log trouvé</div></td></tr>';
+        return;
+      }
+
+      document.getElementById('logs-tbody').innerHTML = logs.map(l => {
+        const meta = ACTION_META[l.action] || { icon:'fa-circle', label: l.action };
+        const av   = (l.user_name || 'S').split('@')[0].slice(0,2).toUpperCase();
+        const roleCls = l.role === 'admin' ? 'admin' : l.role === 'employee' ? 'employee' : 'system';
+        const date = String(l.created_at || '').slice(0, 16).replace('T', ' ');
+
+        return `
+          <tr>
+            <td style="color:#bbb;font-size:.78rem;font-weight:600">#${l.id}</td>
+            <td>
+              <div class="user-cell">
+                <div class="u-av ${roleCls}">${av}</div>
+                <span style="font-size:.84rem;font-weight:600;color:#1a1a2e">${l.user_name}</span>
+              </div>
+            </td>
+            <td><span class="role-pill ${roleCls}">${l.role}</span></td>
+            <td><span class="action-badge ${l.action}"><i class="fas ${meta.icon}"></i>${meta.label}</span></td>
+            <td><div class="target-cell" title="${l.target || ''}">${l.target || '<span style="color:#ccc">—</span>'}</div></td>
+            <td style="color:#888;font-size:.82rem;white-space:nowrap">${date}</td>
+          </tr>`;
+      }).join('');
+
+      loadKPIs();
+    }
+
+    /* ── Pagination ─────────────────────────────────────────── */
+    function changePage(dir) {
+      const totalPages = Math.max(1, Math.ceil(totalLogs / PER_PAGE));
+      currentPage = Math.max(1, Math.min(currentPage + dir, totalPages));
+      loadLogs();
+    }
+
+    /* ── Filters ────────────────────────────────────────────── */
+    ['f-action','f-user','f-from','f-to'].forEach(id => {
+      document.getElementById(id).addEventListener('change', () => {
+        currentPage = 1;
+        loadLogs();
+      });
+    });
+
+    /* ── Purge ──────────────────────────────────────────────── */
+    function confirmPurge() {
+      document.getElementById('purge-modal').classList.add('open');
+    }
+    function closePurge() {
+      document.getElementById('purge-modal').classList.remove('open');
+    }
+    async function doPurge() {
+      closePurge();
+      const r = await api('/api/logs', { method: 'DELETE' });
+      if (r && r.success) {
+        Toast.success('Logs purgés avec succès.');
+        currentPage = 1;
+        loadLogs();
+      } else {
+        Toast.error('Erreur lors de la purge.');
+      }
+    }
+
+    /* ── Auto-refresh toutes les 30s ────────────────────────── */
+    setInterval(() => loadLogs(), 30000);
+
+    /* ── Init ───────────────────────────────────────────────── */
+    if (ME.role === 'admin') {
+      loadUsers().then(() => loadLogs());
+    }
+  </script>
+</body>
+</html>
