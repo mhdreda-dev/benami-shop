@@ -586,8 +586,8 @@ document.getElementById(isAdm ? 'dash-admin' : 'dash-employee').classList.add('a
    API HELPER
 ════════════════════════════════════════════════════════ */
 async function api(path) {
-  try {
-    const r = await fetch('http://localhost:3000' + path, {
+      try {
+        const r = await fetch(path, {
       headers: { Authorization: 'Bearer ' + TOKEN }
     });
     if (r.status === 401) { logout(); return null; }
