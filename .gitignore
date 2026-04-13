@@ -7,7 +7,7 @@
 .env.local
 .env.production
 
-# Base de données SQLite (données sensibles)
+# Ancienne base SQLite (plus utilisée — PostgreSQL depuis v8)
 *.db
 *.db-shm
 *.db-wal
