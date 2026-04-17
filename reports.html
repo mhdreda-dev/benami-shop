@@ -2,6 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rapports — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -24,7 +27,7 @@
     <header class="topbar" id="topbar"></header>
     <main class="page-content">
       <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <div><h1>Rapports & Analyses</h1><p>Vue analytique de votre inventaire — données de benami_shop.db</p></div>
+        <div><h1>Rapports & Analyses</h1><p>Vue analytique de votre inventaire — données PostgreSQL</p></div>
         <div style="display:flex;gap:8px">
           <button class="export-btn" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export CSV</button>
           <button class="export-btn" onclick="exportJSON()"><i class="fas fa-file-code"></i> Export JSON</button>
@@ -97,17 +100,32 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/store.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
     initPage('Rapports', 'Analyses');
 
     const PAL = ['#f97316','#3b82f6','#22c55e','#eab308','#a855f7','#ec4899','#06b6d4','#f43f5e','#84cc16'];
 
+    // Chart instances — keep refs to destroy before re-render
+    let _chartValue = null, _chartStatus = null;
+
+    /* ── Render — lit depuis AppStore (données API/PostgreSQL) ───── */
     function render() {
-      const products  = DB.products.getAll();
-      const movements = DB.movements.getAll();
-      const stats     = DB.products.getStats();
+      // ✅ Données toujours depuis AppStore → PostgreSQL (jamais localStorage)
+      const products  = AppStore.get('products');
+      const movements = AppStore.get('movements');
+      const stats     = AppStore.getStats();
+
+      if (!products.length) {
+        document.getElementById('kpi-grid').innerHTML =
+          '<div style="grid-column:1/-1;padding:3rem;text-align:center;color:var(--text-muted)">' +
+          '<i class="fas fa-spinner fa-spin" style="font-size:2rem;display:block;margin-bottom:1rem"></i>' +
+          'Chargement des données depuis PostgreSQL…</div>';
+        return;
+      }
 
       // KPI grid
       const totalValue = products.reduce((s,p)=>s+p.price*p.qty,0);
@@ -122,14 +140,17 @@
         <div class="stat-card"><div class="stat-card-top"><span class="stat-label">Total sorti</span><div class="stat-icon red"><i class="fas fa-arrow-up"></i></div></div><div class="stat-value">${totalOut}</div><div class="stat-change down">unités vendues</div></div>
       `;
 
-      // Value by brand chart
+      // Value by brand chart — détruire l'instance précédente avant de recréer
+      if (_chartValue) { _chartValue.destroy(); _chartValue = null; }
+      if (_chartStatus) { _chartStatus.destroy(); _chartStatus = null; }
+
       const brandVal = {};
       products.forEach(p=>{ brandVal[p.brand]=(brandVal[p.brand]||0)+p.price*p.qty; });
       const bLabels=Object.keys(brandVal),bData=Object.values(brandVal);
-      new Chart(document.getElementById('value-chart'),{type:'doughnut',data:{labels:bLabels,datasets:[{data:bData,backgroundColor:PAL.slice(0,bLabels.length),borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
+      _chartValue = new Chart(document.getElementById('value-chart'),{type:'doughnut',data:{labels:bLabels,datasets:[{data:bData,backgroundColor:PAL.slice(0,bLabels.length),borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
 
       // Status pie chart
-      new Chart(document.getElementById('status-chart'),{type:'pie',data:{labels:['En stock','Stock faible','Rupture'],datasets:[{data:[stats.total-stats.outOfStock-stats.lowStock,stats.lowStock,stats.outOfStock],backgroundColor:['#22c55e','#eab308','#ef4444'],borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
+      _chartStatus = new Chart(document.getElementById('status-chart'),{type:'pie',data:{labels:['En stock','Stock faible','Rupture'],datasets:[{data:[stats.total-stats.outOfStock-stats.lowStock,stats.lowStock,stats.outOfStock],backgroundColor:['#22c55e','#eab308','#ef4444'],borderWidth:2,borderColor:'#101010'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#666',font:{size:11},padding:10,boxWidth:9}}}}});
 
       // Top by value table
       const byValue=[...products].sort((a,b)=>(b.price*b.qty)-(a.price*a.qty)).slice(0,8);
@@ -150,55 +171,76 @@
       // Alert table
       const alerts=[...products].filter(p=>p.qty<=5).sort((a,b)=>a.qty-b.qty);
       document.getElementById('alert-table').innerHTML = alerts.length
-        ? alerts.map(p=>{const st=DB.helpers.stockStatus(p.qty);return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px"><div style="font-size:13px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--text-dim)">${p.brand}</div></td><td style="padding:10px 14px;text-align:center;font-family:'Syne',sans-serif;font-weight:800">${p.qty}</td><td style="padding:10px 14px"><span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span></td></tr>`;}).join('')
+        ? alerts.map(p=>{
+            const st = p.qty===0?'out':p.qty<=5?'low':'ok';
+            const label = {ok:'En stock',low:'Stock faible',out:'Rupture'}[st];
+            return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:10px 14px"><div style="font-size:13px;font-weight:500">${p.name}</div><div style="font-size:11px;color:var(--text-dim)">${p.brand}</div></td><td style="padding:10px 14px;text-align:center;font-family:'Syne',sans-serif;font-weight:800">${p.qty}</td><td style="padding:10px 14px"><span class="stock-badge ${st}">${label}</span></td></tr>`;
+          }).join('')
         : `<tr><td colspan="3" style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px"><i class="fas fa-check-circle" style="color:var(--success);margin-right:6px"></i>Aucune alerte stock</td></tr>`;
 
       // Movements summary table
       const mvMap={};
       movements.forEach(m=>{
         if(!mvMap[m.product_name])mvMap[m.product_name]={in:0,out:0,adjust:0,total:0};
-        mvMap[m.product_name][m.type]+=m.quantity;
+        mvMap[m.product_name][m.type]=(mvMap[m.product_name][m.type]||0)+m.quantity;
         mvMap[m.product_name].total+=m.quantity;
       });
       const mvRows=Object.entries(mvMap).sort((a,b)=>b[1].total-a[1].total);
       const maxMv=mvRows[0]?mvRows[0][1].total:1;
-      document.getElementById('mv-summary-table').innerHTML=mvRows.map(([name,s])=>`
-        <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:11px 16px;font-size:13px;font-weight:500">${name}</td>
-          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--success)">+${s.in}</td>
-          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--danger)">−${s.out}</td>
-          <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--blue)">${s.adjust}</td>
-          <td style="padding:11px 16px">
-            <div class="progress-bar-wrap" style="min-width:80px"><div class="progress-bar-fill" style="width:${Math.round(s.total/maxMv*100)}%"></div></div>
-          </td>
-        </tr>`).join('');
+      document.getElementById('mv-summary-table').innerHTML=mvRows.length
+        ? mvRows.map(([name,s])=>`
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:11px 16px;font-size:13px;font-weight:500">${name}</td>
+            <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--success)">+${s.in||0}</td>
+            <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--danger)">−${s.out||0}</td>
+            <td style="padding:11px 16px;text-align:center;font-family:'Syne',sans-serif;font-weight:700;color:var(--blue)">${s.adjust||0}</td>
+            <td style="padding:11px 16px">
+              <div class="progress-bar-wrap" style="min-width:80px"><div class="progress-bar-fill" style="width:${Math.round(s.total/maxMv*100)}%"></div></div>
+            </td>
+          </tr>`).join('')
+        : `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-muted)">Aucun mouvement</td></tr>`;
     }
 
+    /* ── Exports — lisent depuis AppStore (SQLite) ──────────────── */
     function exportCSV() {
-      const products = DB.products.getAll();
+      // ✅ Données depuis AppStore → SQLite (jamais localStorage)
+      const products = AppStore.get('products');
       const header = 'ID,Nom,SKU,Marque,Prix,Quantite,Couleur,Statut\n';
-      const rows = products.map(p =>
-        `${p.id},"${p.name}","${p.sku}","${p.brand}",${p.price},${p.qty},"${p.color||''}","${DB.helpers.stockLabel(DB.helpers.stockStatus(p.qty))}"`
-      ).join('\n');
+      const rows = products.map(p => {
+        const st = p.qty===0?'Rupture':p.qty<=5?'Stock faible':'En stock';
+        return `${p.id},"${p.name}","${p.sku}","${p.brand}",${p.price},${p.qty},"${p.color||''}","${st}"`;
+      }).join('\n');
       const blob = new Blob([header+rows],{type:'text/csv'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='benami_products.csv';a.click();
       Toast.success('Export CSV téléchargé !');
     }
 
     function exportJSON() {
+      // ✅ Données depuis AppStore → SQLite (jamais localStorage)
       const data = {
         exported_at: new Date().toISOString(),
-        source: 'benami_shop.db',
-        products: DB.products.getAll(),
-        brands: DB.brands.getAll(),
-        movements: DB.movements.getAll(),
+        source: 'PostgreSQL',
+        products:  AppStore.get('products'),
+        brands:    AppStore.get('brands'),
+        movements: AppStore.get('movements'),
       };
       const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='benami_export.json';a.click();
       Toast.success('Export JSON téléchargé !');
     }
 
-    render();
+    /* ── Events AppStore → re-render automatique ─────────────────── */
+    AppStore.on('data:loaded',      () => render());
+    AppStore.on('products:updated', () => render());
+    AppStore.on('stats:updated',    () => render());
+    AppStore.on('error', e => Toast.error(e.detail?.message || 'Erreur serveur'));
+
+    /* ── Boot — TOUJOURS via API → SQLite ────────────────────────── */
+    DB.onReady(async (mode) => {
+      await AppStore.init(mode);  // charge products + brands + movements depuis /api/*
+      render();
+      AppStore.startPolling(60000);
+    });
   </script>
 </body>
 </html>

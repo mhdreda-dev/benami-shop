@@ -7,6 +7,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -567,8 +570,11 @@
 
 <!-- ── SCRIPTS ───────────────────────────────────────────── -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="assets/js/db.js"></script>
-<script src="assets/js/app.js"></script>
+<script src="config.js?v=9"></script>
+<script src="assets/js/api.js?v=7"></script>
+<script src="assets/js/store.js?v=9"></script>
+<script src="assets/js/db.js?v=9"></script>
+<script src="assets/js/app.js?v=9"></script>
 <script>
 /* ════════════════════════════════════════════════════════
    INIT
@@ -576,8 +582,8 @@
 initPage('Dashboard', 'Vue globale');
 
 const ME    = Auth.getUser();
-const TOKEN = Auth.getToken();
 const isAdm = Auth.isAdmin();
+// ✅ TOKEN supprimé — api() lit Auth.getToken() dynamiquement à chaque appel
 
 /* Mettre le bon dashboard visible */
 document.getElementById(isAdm ? 'dash-admin' : 'dash-employee').classList.add('active');
@@ -586,9 +592,11 @@ document.getElementById(isAdm ? 'dash-admin' : 'dash-employee').classList.add('a
    API HELPER
 ════════════════════════════════════════════════════════ */
 async function api(path) {
-      try {
-        const r = await fetch(path, {
-      headers: { Authorization: 'Bearer ' + TOKEN }
+  try {
+    // ✅ Token lu dynamiquement à chaque appel (pas de capture figée au parse)
+    const tok = Auth.getToken();
+    const r = await fetch(path, {
+      headers: { Authorization: 'Bearer ' + tok }
     });
     if (r.status === 401) { logout(); return null; }
     return r.json();
@@ -719,6 +727,17 @@ function timeAgo(dateStr) {
 ════════════════════════════════════════════════════════ */
 let empProducts = [];
 
+/* Helper — met à jour les KPI cards employé */
+function _updateEmpKpi(stats) {
+  if (!stats) return;
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('ek-products', stats.total      || 0);
+  set('ek-units',    fmtNum(stats.totalUnits));
+  set('ek-out',      stats.outOfStock || 0);
+  set('ek-low',      stats.lowStock   || 0);
+  alertStrip('emp-alerts', stats);
+}
+
 async function loadEmpDash() {
   /* Greeting */
   const h = new Date().getHours();
@@ -726,25 +745,16 @@ async function loadEmpDash() {
   document.getElementById('emp-greeting').textContent =
     `${greet}, ${ME ? ME.name.split(' ')[0] : ''} 👋`;
 
-  /* Stats + Products */
-  const [stats, products] = await Promise.all([
-    api('/api/stats'),
-    api('/api/products'),
-  ]);
+  /* ✅ Source unique de vérité : AppStore → API → SQLite
+     Jamais localStorage, jamais de données isolées par rôle */
+  const stats    = AppStore.getStats();
+  const products = AppStore.get('products');
 
-  if (stats) {
-    document.getElementById('ek-products').textContent = stats.total     || 0;
-    document.getElementById('ek-units').textContent    = fmtNum(stats.totalUnits);
-    document.getElementById('ek-out').textContent      = stats.outOfStock || 0;
-    document.getElementById('ek-low').textContent      = stats.lowStock   || 0;
-    alertStrip('emp-alerts', stats);
-  }
+  _updateEmpKpi(stats);
 
-  if (products) {
-    empProducts = products;
-    renderEmpTable(products);
-    populateStockInSelect(products);
-  }
+  empProducts = products;
+  renderEmpTable(products);
+  populateStockInSelect(products);
 }
 
 function renderEmpTable(products) {
@@ -843,24 +853,23 @@ async function saveStockIn() {
   btn.disabled = true; btn.textContent = 'Enregistrement…';
 
   try {
-    const r = await fetch('/api/movements', {
-      method:'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + TOKEN },
-      body: JSON.stringify({
-        product_id:   productId,
-        product_name: p ? p.name : '',
-        brand:        p ? p.brand : '',
-        type:         'in',
-        size,
-        quantity:     qty,
-        note,
-      })
+    /* ✅ Via AppStore → POST /api/movements → SQLite
+       AppStore re-sync products + stats puis émet :
+       'products:updated' → renderEmpTable() auto
+       'stats:updated'    → _updateEmpKpi() auto        */
+    await AppStore.actions.addMovement({
+      product_id:   productId,
+      product_name: p ? p.name : '',
+      brand:        p ? p.brand : '',
+      type:         'in',
+      size,
+      quantity:     qty,
+      note,
     });
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || 'Erreur');
     Toast.success(`+${qty} unité${qty>1?'s':''} ajoutée${qty>1?'s':''} avec succès !`);
     closeStockIn();
-    loadEmpDash(); /* refresh */
+    /* Pas besoin de loadEmpDash() — les events AppStore
+       déclenchent le refresh automatique du tableau */
   } catch(e) {
     Toast.error(e.message);
   } finally {
@@ -874,13 +883,42 @@ document.getElementById('stock-in-modal').addEventListener('click', e => {
 });
 
 /* ════════════════════════════════════════════════════════
-   BOOT
+   BOOT — AppStore (source unique → SQLite API)
+   ✅ Admin  : chargement frais + graphiques depuis AppStore
+   ✅ Employé: chargement frais + polling 30s + events auto-refresh
 ════════════════════════════════════════════════════════ */
-if (isAdm) {
-  loadAdminDash();
-} else {
-  loadEmpDash();
-}
+DB.onReady(async (mode) => {
+  /* 1. Initialiser AppStore → charge tout depuis /api/* */
+  await AppStore.init(mode);
+
+  /* 2. ── Abonnements événements (sync temps réel) ─────── */
+
+  /* Mis à jour des produits → re-render tableau employé */
+  AppStore.on('products:updated', () => {
+    Drawer.updateBadges();
+    if (!isAdm) {
+      empProducts = AppStore.get('products');
+      renderEmpTable(empProducts);
+      populateStockInSelect(empProducts);
+    }
+  });
+
+  /* Mise à jour des stats → KPI employé + badges */
+  AppStore.on('stats:updated', () => {
+    Drawer.updateBadges();
+    if (!isAdm) _updateEmpKpi(AppStore.getStats());
+  });
+
+  /* 3. ── Lancer le dashboard selon le rôle ─────────────── */
+  if (isAdm) {
+    loadAdminDash();
+  } else {
+    loadEmpDash();
+  }
+
+  /* 4. ── Polling 30s : sync automatique sans refresh page ─ */
+  AppStore.startPolling(30000);
+});
 </script>
 
 </body>

@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<!--
-  BEN AMI SHOP — Add / Edit Product (add-product.html)
-  Full form with image upload, size builder, validation.
-  When loaded with ?edit=ID it pre-fills the form for editing.
--->
+<!-- BEN AMI SHOP — add-product.html v3 — Architecture SaaS (AppStore) -->
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ajouter un produit — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -14,85 +13,34 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
   <aside class="sidebar" id="sidebar"></aside>
-
   <div class="main-wrapper">
     <header class="topbar" id="topbar"></header>
-
     <main class="page-content">
 
-      <!-- Page Header (title changes depending on add vs edit mode) -->
       <div class="page-header">
         <h1 id="page-h1">Ajouter un produit</h1>
         <p id="page-sub">Renseignez les informations du nouveau modèle de chaussure</p>
       </div>
 
-      <!-- Form Card -->
       <div class="form-card">
-
         <div class="form-grid">
-
-          <!-- Nom du modèle -->
-          <div class="form-group">
-            <label class="form-label">Nom du modèle *</label>
-            <input class="form-input" id="f-name" placeholder="ex: Nike Air Max 2024">
-          </div>
-
-          <!-- SKU -->
-          <div class="form-group">
-            <label class="form-label">SKU / Référence *</label>
-            <input class="form-input" id="f-sku" placeholder="ex: NK-AM2024-001">
-          </div>
-
-          <!-- Marque -->
+          <div class="form-group"><label class="form-label">Nom du modèle *</label><input class="form-input" id="f-name" placeholder="ex: Nike Air Max 2024"></div>
+          <div class="form-group"><label class="form-label">SKU / Référence *</label><input class="form-input" id="f-sku" placeholder="ex: NK-AM2024-001"></div>
           <div class="form-group">
             <label class="form-label">Marque *</label>
             <input class="form-input" id="f-brand" list="brand-list" placeholder="ex: Nike">
             <datalist id="brand-list">
-              <option value="Nike">
-              <option value="Adidas">
-              <option value="Puma">
-              <option value="New Balance">
-              <option value="Reebok">
-              <option value="Converse">
-              <option value="Vans">
-              <option value="Jordan">
-              <option value="Skechers">
+              <option value="Nike"><option value="Adidas"><option value="Puma">
+              <option value="New Balance"><option value="Reebok"><option value="Converse">
+              <option value="Vans"><option value="Jordan"><option value="Skechers">
             </datalist>
           </div>
-
-          <!-- Prix -->
-          <div class="form-group">
-            <label class="form-label">Prix (MAD) *</label>
-            <input class="form-input" id="f-price" type="number" min="0" step="0.01" placeholder="0.00">
-          </div>
-
-          <!-- Quantité -->
-          <div class="form-group">
-            <label class="form-label">Quantité totale en stock *</label>
-            <input class="form-input" id="f-qty" type="number" min="0" placeholder="0">
-          </div>
-
-          <!-- Couleur -->
-          <div class="form-group">
-            <label class="form-label">Couleur principale</label>
-            <input class="form-input" id="f-color" placeholder="ex: Blanc/Rouge">
-          </div>
-
-          <!-- Tailles -->
-          <div class="form-group span-2">
-            <label class="form-label">Tailles disponibles</label>
-            <div class="size-builder" id="size-builder"></div>
-          </div>
-
-          <!-- Description -->
-          <div class="form-group span-2">
-            <label class="form-label">Description courte</label>
-            <textarea class="form-textarea" id="f-desc" placeholder="Décrivez brièvement le modèle…"></textarea>
-          </div>
-
-          <!-- Image Upload -->
+          <div class="form-group"><label class="form-label">Prix (MAD) *</label><input class="form-input" id="f-price" type="number" min="0" step="0.01" placeholder="0.00"></div>
+          <div class="form-group"><label class="form-label">Quantité totale *</label><input class="form-input" id="f-qty" type="number" min="0" placeholder="0"></div>
+          <div class="form-group"><label class="form-label">Couleur principale</label><input class="form-input" id="f-color" placeholder="ex: Blanc/Rouge"></div>
+          <div class="form-group span-2"><label class="form-label">Tailles disponibles</label><div class="size-builder" id="size-builder"></div></div>
+          <div class="form-group span-2"><label class="form-label">Description</label><textarea class="form-textarea" id="f-desc" placeholder="Décrivez brièvement le modèle…"></textarea></div>
           <div class="form-group span-2">
             <label class="form-label">Image du produit</label>
             <div class="upload-zone" id="upload-zone">
@@ -103,184 +51,245 @@
             </div>
             <div class="image-previews" id="img-preview"></div>
           </div>
-
-        </div><!-- /form-grid -->
-
+        </div>
         <div class="form-divider"></div>
-
         <div class="form-actions">
-          <a href="products.html" class="btn btn-ghost">
-            <i class="fas fa-times"></i> Annuler
-          </a>
-          <button class="btn btn-primary" onclick="saveProduct()">
-            <i class="fas fa-save"></i>
-            <span id="save-label">Enregistrer le produit</span>
+          <a href="products.html" class="btn btn-ghost"><i class="fas fa-times"></i> Annuler</a>
+          <button type="button" class="btn btn-primary" id="btn-save" onclick="saveProduct()">
+            <i class="fas fa-save"></i> <span id="save-label">Enregistrer le produit</span>
           </button>
         </div>
-
-      </div><!-- /form-card -->
+        <div id="save-error" style="display:none;margin-top:10px;color:#ef4444;font-size:12px"></div>
+      </div>
 
     </main>
   </div>
 
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- ── SCRIPTS ────────────────────────────────────────────────── -->
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/api.js?v=7"></script>
+  <script src="assets/js/store.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
-    /* ── Add/Edit Product Page Logic ───────────────────────────── */
+    let _editId  = null;
+    let _getImg  = null;
+    let _appReady = false;
 
-    let editId     = null;   // null = adding new, number = editing
-    let getImgData = null;   // function from ImageUpload.bind()
-
-    /* ── Detect edit mode from URL param ?edit=ID ─────────────── */
-    function detectMode() {
-      const params = new URLSearchParams(location.search);
-      const id = params.get('edit');
-
-      if (id) {
-        const p = DB.products.getById(id);
-        if (!p) {
-          Toast.error('Produit introuvable.');
-          return;
-        }
-        editId = p.id;
-
-        // Update page titles
-        document.getElementById('page-h1').textContent    = 'Modifier le produit';
-        document.getElementById('page-sub').textContent   = `Modification de "${p.name}"`;
-        document.getElementById('save-label').textContent = 'Mettre à jour';
-        document.title = `Modifier ${p.name} — Ben Ami Shop`;
-
-        // Pre-fill form
-        document.getElementById('f-name').value  = p.name;
-        document.getElementById('f-sku').value   = p.sku;
-        document.getElementById('f-brand').value = p.brand;
-        document.getElementById('f-price').value = p.price;
-        document.getElementById('f-qty').value   = p.qty;
-        document.getElementById('f-color').value = p.color || '';
-        document.getElementById('f-desc').value  = p.desc  || '';
-
-        // Pre-select sizes
-        SizeBuilder.render('size-builder', p.sizes || []);
-
-        // Show current image
-        if (typeof p.img === 'string' && p.img.startsWith('data:')) {
-          document.getElementById('img-preview').innerHTML =
-            `<div class="preview-box"><img src="${p.img}" alt=""></div>`;
-        } else {
-          document.getElementById('img-preview').innerHTML =
-            `<div style="font-size:44px;padding:8px">${p.img || '👟'}</div>`;
-        }
+    function setSaveState(saving) {
+      const btn = document.getElementById('btn-save');
+      if (!btn) return;
+      if (saving) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enregistrement…';
       } else {
-        // Fresh form for adding
-        SizeBuilder.render('size-builder');
+        btn.disabled = !_appReady;
+        btn.innerHTML = '<i class="fas fa-save"></i> <span id="save-label">' +
+          (_editId ? 'Mettre à jour' : 'Enregistrer le produit') + '</span>';
       }
     }
 
-    /* ── Save (handles both add and update) ──────────────────── */
-    function saveProduct() {
+    function showSaveError(message) {
+      const el = document.getElementById('save-error');
+      if (!el) return;
+      if (!message) {
+        el.style.display = 'none';
+        el.textContent = '';
+        return;
+      }
+      el.style.display = 'block';
+      el.textContent = message;
+    }
+
+    async function createProductWithFallback(data) {
+      try {
+        return await AppStore.actions.addProduct(data);
+      } catch (e) {
+        console.warn('[ADD-PRODUCT] AppStore addProduct failed, fallback API:', e.message);
+        const r = await API.products.create(data);
+        try {
+          await AppStore.actions.refreshProducts();
+          await AppStore.actions.refreshMovements();
+        } catch(syncErr) {
+          console.warn('[ADD-PRODUCT] Sync after fallback failed:', syncErr.message);
+        }
+        return r && r.id ? r.id : null;
+      }
+    }
+
+    async function updateProductWithFallback(id, data) {
+      try {
+        await AppStore.actions.updateProduct(id, data);
+      } catch (e) {
+        console.warn('[ADD-PRODUCT] AppStore updateProduct failed, fallback API:', e.message);
+        await API.products.update(id, data);
+        try {
+          await AppStore.actions.refreshProducts();
+          await AppStore.actions.refreshMovements();
+        } catch(syncErr) {
+          console.warn('[ADD-PRODUCT] Sync after fallback failed:', syncErr.message);
+        }
+      }
+    }
+
+    /* ── Detect edit mode ─────────────────────────────────────── */
+    async function detectMode() {
+      const params = new URLSearchParams(location.search);
+      const id = params.get('edit');
+      if (!id) { SizeBuilder.render('size-builder'); return; }
+
+      // Charger depuis AppStore (état centralisé) ou API directement
+      let p = AppStore.getProduct(+id);
+      if (!p) {
+        // Fallback: charger depuis l'API si AppStore pas encore chargé
+        try { p = await API.products.getOne(id); } catch(e) {}
+      }
+      if (!p) { Toast.error('Produit introuvable.'); return; }
+
+      _editId = p.id;
+      document.getElementById('page-h1').textContent    = 'Modifier le produit';
+      document.getElementById('page-sub').textContent   = `Modification de "${p.name}"`;
+      document.getElementById('save-label').textContent = 'Mettre à jour';
+      document.title = `Modifier ${p.name} — Ben Ami Shop`;
+
+      document.getElementById('f-name').value  = p.name;
+      document.getElementById('f-sku').value   = p.sku;
+      document.getElementById('f-brand').value = p.brand;
+      document.getElementById('f-price').value = p.price;
+      document.getElementById('f-qty').value   = p.qty;
+      document.getElementById('f-color').value = p.color || '';
+      document.getElementById('f-desc').value  = p.description || p.desc || '';
+      SizeBuilder.render('size-builder', p.sizes || []);
+
+      const prev = document.getElementById('img-preview');
+      prev.innerHTML = typeof p.img === 'string' && p.img.startsWith('data:')
+        ? `<div class="preview-box"><img src="${p.img}" alt=""></div>`
+        : `<div style="font-size:44px;padding:8px">${p.img||'👟'}</div>`;
+    }
+
+    /* ── Save product ─────────────────────────────────────────── */
+    async function saveProduct() {
+      showSaveError('');
+      if (!_appReady) {
+        Toast.info('Initialisation en cours… réessayez dans quelques secondes.');
+        return;
+      }
+
       const name  = document.getElementById('f-name').value.trim();
       const sku   = document.getElementById('f-sku').value.trim();
       const brand = document.getElementById('f-brand').value.trim();
       const price = parseFloat(document.getElementById('f-price').value) || 0;
-      const qty   = parseInt(document.getElementById('f-qty').value)     || 0;
+      const qty   = parseInt(document.getElementById('f-qty').value) || 0;
       const color = document.getElementById('f-color').value.trim();
       const desc  = document.getElementById('f-desc').value.trim();
       const sizes = SizeBuilder.getSelected('size-builder');
-      const imgData = getImgData ? getImgData() : null;
+      const img   = _getImg ? _getImg() : null;
 
-      // Validation
-      if (!name)  { Toast.error('Le nom du modèle est requis.'); return; }
+      if (!name)  { Toast.error('Le nom est requis.'); return; }
       if (!sku)   { Toast.error('Le SKU est requis.'); return; }
       if (!brand) { Toast.error('La marque est requise.'); return; }
-      if (DB.products.skuExists(sku, editId)) {
-        Toast.error('Ce SKU existe déjà pour un autre produit.'); return;
+      if (AppStore.get('products').some(p => p.sku === sku && (!_editId || p.id !== +_editId))) { Toast.error('Ce SKU existe déjà.'); return; }
+
+      setSaveState(true);
+
+      const data = { name, sku, brand, price, qty, color, desc, description: desc, sizes };
+      if (img) data.img = img;
+      console.log('[ADD-PRODUCT] submit', {
+        mode: _editId ? 'update' : 'create',
+        name: data.name,
+        sku: data.sku,
+        brand: data.brand,
+        price: data.price,
+        qty: data.qty,
+        sizesCount: Array.isArray(data.sizes) ? data.sizes.length : 0,
+        hasImage: !!data.img,
+      });
+
+      try {
+        if (_editId) {
+          /* ── MODIFICATION via AppStore ───────────────────── */
+          const p = AppStore.getProduct(_editId);
+          data.img = img || (p ? p.img : '👟');
+          await updateProductWithFallback(_editId, data);
+          await AppStore.actions.refreshProducts().catch(() => {});
+          await AppStore.actions.refreshMovements().catch(() => {});
+          Toast.success(`"${name}" mis à jour !`);
+
+        } else {
+          /* ── CRÉATION via AppStore ────────────────────────
+           * AppStore.actions.addProduct :
+           *   1. POST /api/products → SQLite (id réel)
+           *   2. Reload products depuis SQLite dans l'état
+           *   3. Émet 'product:added' → toutes les pages réagissent
+           */
+          if (!data.img) data.img = '👟';
+
+          const newId = await createProductWithFallback(data);
+          console.log('[ADD-PRODUCT] ✅ Créé dans SQLite, id=' + newId + ', state rechargé');
+          await AppStore.actions.refreshProducts().catch(() => {});
+          await AppStore.actions.refreshMovements().catch(() => {});
+
+          Toast.success(`"${name}" ajouté avec succès !`);
+        }
+
+        Sidebar.updateBadges();
+        setTimeout(() => { window.location.href = 'products.html'; }, 900);
+
+      } catch(e) {
+        console.error('[ADD-PRODUCT] ❌', e.message);
+        let msg = e && e.message ? e.message : 'Erreur serveur';
+        if (msg.includes('Payload trop volumineux')) {
+          msg = 'Image trop lourde pour le serveur. Réduisez la taille puis réessayez.';
+        }
+        showSaveError(msg);
+        Toast.error('Erreur: ' + msg);
+      } finally {
+        setSaveState(false);
       }
-
-      const data = { name, sku, brand, price, qty, color, desc, sizes };
-      if (imgData) data.img = imgData;
-
-      if (editId) {
-        /* ── UPDATE existing product ─────────────────────────── */
-        const p      = DB.products.getById(editId);
-        const oldQty = p.qty;
-        data.img     = imgData || p.img; // keep old image if none uploaded
-        DB.products.update(editId, data);
-
-        // Record adjustment if qty changed
-        const diff = qty - oldQty;
-        if (diff !== 0) {
-          DB.movements.add({
-            product_id:   editId,
-            size:         null,
-            type:         'adjust',
-            quantity:     Math.abs(diff),
-            note:         `Ajustement stock (${diff > 0 ? '+' : ''}${diff})`,
-            product_name: name,
-          });
-        }
-
-        Toast.success(`"${name}" mis à jour avec succès !`);
-      } else {
-        /* ── ADD new product ─────────────────────────────────── */
-        if (!data.img) data.img = '👟'; // default emoji if no image
-        const newId = DB.products.add(data);
-
-        // Distribute qty across selected sizes
-        if (sizes.length) {
-          DB.sizes.initForProduct(newId, sizes, qty);
-        }
-
-        // Record initial stock-in movement
-        if (qty > 0) {
-          DB.movements.add({
-            product_id:   newId,
-            size:         null,
-            type:         'in',
-            quantity:     qty,
-            note:         'Stock initial à la création',
-            product_name: name,
-          });
-        }
-
-        Toast.success(`"${name}" ajouté avec succès !`);
-      }
-
-      Sidebar.updateBadges();
-
-      // Redirect to catalog after short delay
-      setTimeout(() => { window.location.href = 'products.html'; }, 900);
     }
 
-    /* ── Drag & drop highlight ───────────────────────────────── */
+    /* ── Drag & drop ──────────────────────────────────────────── */
     const zone = document.getElementById('upload-zone');
-    zone.addEventListener('dragover',  (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
     zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
-    zone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      zone.classList.remove('drag-over');
-      const dt = e.dataTransfer;
-      if (dt.files.length) {
-        document.getElementById('f-img').files = dt.files;
-        document.getElementById('f-img').dispatchEvent(new Event('change'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('drag-over');
+      const f = e.dataTransfer.files[0];
+      if (f) {
+        const inp = document.getElementById('f-img');
+        const dt  = new DataTransfer(); dt.items.add(f);
+        inp.files = dt.files;
+        inp.dispatchEvent(new Event('change'));
       }
     });
 
-    /* ── Init ────────────────────────────────────────────────── */
+    /* ── Boot ─────────────────────────────────────────────────── */
     initPage('Ajouter un produit', 'Nouveau produit');
-    detectMode();
 
-    /* Bloquer l'accès à cette page pour les employés */
     if (!Auth.isAdmin()) {
-      Toast.error('Accès refusé : réservé aux administrateurs.');
+      Toast.error('Accès réservé aux administrateurs.');
       setTimeout(() => { window.location.href = 'products.html'; }, 1200);
     }
 
-    // Bind image upload AFTER detectMode (which may set existing preview)
-    getImgData = ImageUpload.bind('f-img', 'img-preview');
-  </script>
+    _getImg = ImageUpload.bind('f-img', 'img-preview');
+    setSaveState(false);
 
+    // Initialiser AppStore avant detectMode pour que getProduct() fonctionne
+    DB.onReady(async (mode) => {
+      try {
+        await AppStore.init(mode);
+        await detectMode();
+        _appReady = true;
+        showSaveError('');
+        console.log('[ADD-PRODUCT] AppStore prêt, mode=', AppStore.getStatus ? AppStore.getStatus() : mode);
+      } catch (e) {
+        console.error('[ADD-PRODUCT] init failed:', e.message);
+        showSaveError('Initialisation échouée: ' + e.message);
+      } finally {
+        setSaveState(false);
+      }
+    });
+  </script>
 </body>
 </html>

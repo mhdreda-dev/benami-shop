@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<!--
-  BEN AMI SHOP — Products Catalog (products.html)
-  Full table with search, brand/size/stock filters, pagination,
-  view detail modal, edit modal, delete confirm modal.
--->
+<!-- BEN AMI SHOP — products.html v3 — Architecture SaaS (AppStore) -->
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Produits — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -14,12 +13,9 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-
   <aside class="sidebar" id="sidebar"></aside>
-
   <div class="main-wrapper">
     <header class="topbar" id="topbar"></header>
-
     <main class="page-content">
 
       <div class="page-header">
@@ -27,51 +23,35 @@
         <p>Gérez l'ensemble de vos modèles de chaussures</p>
       </div>
 
-      <!-- Toolbar: search + filters + add button -->
       <div class="toolbar">
         <div class="toolbar-search">
           <i class="fas fa-search"></i>
           <input type="text" id="search-input" placeholder="Rechercher par nom ou SKU…">
         </div>
-
-        <select class="filter-select" id="filter-brand">
-          <option value="">Toutes les marques</option>
-        </select>
-
-        <select class="filter-select" id="filter-size">
-          <option value="">Toutes les tailles</option>
-        </select>
-
+        <select class="filter-select" id="filter-brand"><option value="">Toutes les marques</option></select>
+        <select class="filter-select" id="filter-size"><option value="">Toutes les tailles</option></select>
         <select class="filter-select" id="filter-stock">
           <option value="">Tous les stocks</option>
           <option value="ok">En stock</option>
           <option value="low">Stock faible</option>
           <option value="out">Rupture</option>
         </select>
-
         <a href="add-product.html" class="btn btn-primary" data-role="admin">
           <i class="fas fa-plus"></i> Ajouter
         </a>
       </div>
 
-      <!-- Products Table -->
       <div class="table-wrapper">
         <table>
           <thead>
-            <tr>
-              <th>Produit</th>
-              <th>Marque</th>
-              <th>Prix</th>
-              <th>Tailles</th>
-              <th>Stock</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Produit</th><th>Marque</th><th>Prix</th><th>Tailles</th><th>Stock</th><th>Statut</th><th>Actions</th></tr>
           </thead>
-          <tbody id="products-tbody"></tbody>
+          <tbody id="products-tbody">
+            <tr><td colspan="7" style="padding:2rem;text-align:center;color:var(--text-muted)">
+              <i class="fas fa-spinner fa-spin"></i> Chargement…
+            </td></tr>
+          </tbody>
         </table>
-
-        <!-- Pagination bar -->
         <div class="pagination">
           <span id="pag-info">0 produits</span>
           <div class="pagination-btns" id="pag-btns"></div>
@@ -81,14 +61,13 @@
     </main>
   </div>
 
-  <!-- ── VIEW DETAIL MODAL ─────────────────────────────────────── -->
+  <!-- Detail Modal -->
   <div class="modal-overlay" id="detail-modal">
     <div class="modal" style="width:500px">
       <div class="modal-header">
         <div class="modal-title">Détail produit</div>
         <div class="modal-close" onclick="Modal.close('detail-modal')"><i class="fas fa-times"></i></div>
       </div>
-      <!-- Hero section with image + name -->
       <div class="detail-hero">
         <div class="detail-img" id="detail-img"></div>
         <div>
@@ -97,7 +76,6 @@
           <span class="brand-tag"  id="detail-brand"></span>
         </div>
       </div>
-      <!-- Detail rows -->
       <div class="modal-body" id="detail-body"></div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="Modal.close('detail-modal')">Fermer</button>
@@ -106,7 +84,7 @@
     </div>
   </div>
 
-  <!-- ── EDIT MODAL ────────────────────────────────────────────── -->
+  <!-- Edit Modal -->
   <div class="modal-overlay" id="edit-modal">
     <div class="modal">
       <div class="modal-header">
@@ -115,75 +93,46 @@
       </div>
       <div class="modal-body">
         <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label">Nom du modèle *</label>
-            <input class="form-input" id="edit-name" placeholder="Nom du modèle">
-          </div>
-          <div class="form-group">
-            <label class="form-label">SKU</label>
-            <input class="form-input" id="edit-sku" placeholder="SKU">
-          </div>
+          <div class="form-group"><label class="form-label">Nom *</label><input class="form-input" id="edit-name"></div>
+          <div class="form-group"><label class="form-label">SKU</label><input class="form-input" id="edit-sku"></div>
           <div class="form-group">
             <label class="form-label">Marque</label>
-            <input class="form-input" id="edit-brand" list="brand-suggestions" placeholder="Marque">
+            <input class="form-input" id="edit-brand" list="brand-suggestions">
             <datalist id="brand-suggestions">
               <option value="Nike"><option value="Adidas"><option value="Puma">
               <option value="New Balance"><option value="Reebok"><option value="Converse">
               <option value="Vans"><option value="Jordan"><option value="Skechers">
             </datalist>
           </div>
-          <div class="form-group">
-            <label class="form-label">Prix (MAD)</label>
-            <input class="form-input" id="edit-price" type="number" min="0" step="0.01">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Quantité totale</label>
-            <input class="form-input" id="edit-qty" type="number" min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Couleur</label>
-            <input class="form-input" id="edit-color" placeholder="Couleur">
-          </div>
+          <div class="form-group"><label class="form-label">Prix (MAD)</label><input class="form-input" id="edit-price" type="number" min="0" step="0.01"></div>
+          <div class="form-group"><label class="form-label">Quantité</label><input class="form-input" id="edit-qty" type="number" min="0"></div>
+          <div class="form-group"><label class="form-label">Couleur</label><input class="form-input" id="edit-color"></div>
+          <div class="form-group span-2"><label class="form-label">Tailles</label><div class="size-builder" id="edit-size-builder"></div></div>
+          <div class="form-group span-2"><label class="form-label">Description</label><textarea class="form-textarea" id="edit-desc"></textarea></div>
           <div class="form-group span-2">
-            <label class="form-label">Tailles disponibles</label>
-            <div class="size-builder" id="edit-size-builder"></div>
-          </div>
-          <div class="form-group span-2">
-            <label class="form-label">Description</label>
-            <textarea class="form-textarea" id="edit-desc"></textarea>
-          </div>
-          <div class="form-group span-2">
-            <label class="form-label">Image produit</label>
-            <div class="upload-zone">
-              <input type="file" id="edit-img-input" accept="image/*">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <p>Cliquez pour changer l'image</p>
-            </div>
+            <label class="form-label">Image</label>
+            <div class="upload-zone"><input type="file" id="edit-img-input" accept="image/*"><i class="fas fa-cloud-upload-alt"></i><p>Cliquez pour changer l'image</p></div>
             <div class="image-previews" id="edit-img-preview"></div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" onclick="Modal.close('edit-modal')">Annuler</button>
-        <button class="btn btn-primary" onclick="saveEdit()">
-          <i class="fas fa-save"></i> Mettre à jour
-        </button>
+        <button class="btn btn-primary" id="btn-save-edit" onclick="saveEdit()"><i class="fas fa-save"></i> Mettre à jour</button>
       </div>
     </div>
   </div>
 
-  <!-- ── CONFIRM DELETE MODAL ──────────────────────────────────── -->
+  <!-- Confirm Delete -->
   <div class="modal-overlay" id="confirm-modal">
     <div class="modal modal-sm">
       <div class="modal-body" style="padding:28px">
         <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
         <div class="confirm-title">Supprimer ce produit ?</div>
-        <div class="confirm-text">Cette action est irréversible. Le produit sera définitivement supprimé de votre inventaire.</div>
+        <div class="confirm-text">Cette action est irréversible.</div>
         <div style="display:flex;gap:9px">
           <button class="btn btn-ghost" style="flex:1" onclick="Confirm.no()">Annuler</button>
-          <button class="btn btn-danger" style="flex:1" onclick="Confirm.yes()">
-            <i class="fas fa-trash-alt"></i> Supprimer
-          </button>
+          <button class="btn btn-danger" style="flex:1" onclick="Confirm.yes()"><i class="fas fa-trash-alt"></i> Supprimer</button>
         </div>
       </div>
     </div>
@@ -191,188 +140,144 @@
 
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- ── SCRIPTS ────────────────────────────────────────────────── -->
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/api.js?v=7"></script>
+  <script src="assets/js/store.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
-    /* ── Products Page Logic ───────────────────────────────────── */
-
     initPage('Produits', 'Catalogue');
 
-    // Appliquer RBAC après chaque rendu du tableau
-    const _origRenderTable = renderTable;
-    function renderTable() {
-      _origRenderTable();
-      Auth.applyRoles();
-    }
+    let _page    = 1;
+    const PER    = 10;
+    let _editId  = null;
+    let _editImg = null;
 
-    // State
-    let currentPage = 1;
-    const PER_PAGE  = 10;
-    let editId      = null;
-    let editImgFn   = null; // function returning current image data
-
-    /* ── Apply URL params (e.g. ?filter=out from alert pill) ───── */
+    /* ── URL Params ──────────────────────────────────────────── */
     function applyURLParams() {
-      const params = new URLSearchParams(location.search);
-      const filter = params.get('filter');
-      const search = params.get('search');
-      const brand  = params.get('brand');
-      if (filter) document.getElementById('filter-stock').value = filter;
-      if (search) document.getElementById('search-input').value = search;
-      if (brand)  {
-        // Brand filter will be set after updateFilters() populates the dropdown
-        setTimeout(() => {
-          const sel = document.getElementById('filter-brand');
-          sel.value = brand;
-        }, 50);
-      }
+      const p = new URLSearchParams(location.search);
+      if (p.get('filter')) document.getElementById('filter-stock').value = p.get('filter');
+      if (p.get('search')) document.getElementById('search-input').value = p.get('search');
+      if (p.get('brand'))  setTimeout(() => { document.getElementById('filter-brand').value = p.get('brand'); }, 50);
     }
 
-    /* ── Populate filter dropdowns ──────────────────────────────── */
+    /* ── Filters ─────────────────────────────────────────────── */
     function updateFilters() {
-      const products = DB.products.getAll();
+      const products = AppStore.get('products');
       const brands = [...new Set(products.map(p => p.brand))].sort();
-      const sizes  = [...new Set(products.flatMap(p => p.sizes || []))].sort((a, b) => a - b);
+      const sizes  = [...new Set(products.flatMap(p => p.sizes || []))].sort((a,b) => a-b);
 
-      const bSel = document.getElementById('filter-brand');
-      const cur  = bSel.value;
+      const bSel = document.getElementById('filter-brand'), bcur = bSel.value;
       bSel.innerHTML = '<option value="">Toutes les marques</option>' +
-        brands.map(b => `<option value="${b}"${b === cur ? ' selected' : ''}>${b}</option>`).join('');
+        brands.map(b => `<option value="${b}"${b===bcur?' selected':''}>${b}</option>`).join('');
 
-      const sSel = document.getElementById('filter-size');
-      const scur = sSel.value;
+      const sSel = document.getElementById('filter-size'), scur = sSel.value;
       sSel.innerHTML = '<option value="">Toutes les tailles</option>' +
-        sizes.map(s => `<option value="${s}"${s == scur ? ' selected' : ''}>${s}</option>`).join('');
+        sizes.map(s => `<option value="${s}"${s==scur?' selected':''}>${s}</option>`).join('');
     }
 
-    /* ── Main table render ──────────────────────────────────────── */
+    /* ── Render table ─────────────────────────────────────────── */
     function renderTable() {
       const search = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
       const brand  = document.getElementById('filter-brand')?.value  || '';
       const size   = document.getElementById('filter-size')?.value   || '';
       const stock  = document.getElementById('filter-stock')?.value  || '';
 
-      // Filter products
-      let filtered = DB.products.getAll().filter(p => {
-        if (search && !p.name.toLowerCase().includes(search) && !p.sku.toLowerCase().includes(search)) return false;
-        if (brand  && p.brand !== brand)               return false;
-        if (size   && !p.sizes?.includes(+size))       return false;
+      // Lire depuis AppStore — source unique de vérité
+      let filtered = AppStore.get('products').filter(p => {
+        if (search && !p.name.toLowerCase().includes(search) && !(p.sku||'').toLowerCase().includes(search)) return false;
+        if (brand  && p.brand !== brand) return false;
+        if (size   && !(p.sizes||[]).includes(+size)) return false;
         if (stock  && DB.helpers.stockStatus(p.qty) !== stock) return false;
         return true;
       });
 
       const total = filtered.length;
-      const pages = Math.max(1, Math.ceil(total / PER_PAGE));
-      if (currentPage > pages) currentPage = 1;
-
-      const pageItems = filtered.slice((currentPage - 1) * PER_PAGE, currentPage * PER_PAGE);
-
+      const pages = Math.max(1, Math.ceil(total / PER));
+      if (_page > pages) _page = 1;
+      const items = filtered.slice((_page-1)*PER, _page*PER);
       const tbody = document.getElementById('products-tbody');
 
-      if (!pageItems.length) {
-        tbody.innerHTML = `
-          <tr><td colspan="7">
-            <div class="empty-state">
-              <i class="fas fa-shoe-prints"></i>
-              <h3>Aucun produit trouvé</h3>
-              <p>Modifiez vos filtres ou ajoutez un nouveau produit.</p>
-            </div>
-          </td></tr>`;
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+          <i class="fas fa-shoe-prints"></i>
+          <h3>${AppStore.get('products').length === 0 ? 'Aucun produit' : 'Aucun résultat'}</h3>
+          <p>Ajoutez un produit ou modifiez les filtres.</p>
+        </div></td></tr>`;
       } else {
-        tbody.innerHTML = pageItems.map(p => {
-          const st      = DB.helpers.stockStatus(p.qty);
-          const szData  = DB.sizes.getForProduct(p.id);
-          const sizeChips = (p.sizes || []).map(s => {
-            const sd  = szData.find(x => x.size === s);
-            const qty = sd ? sd.qty : 0;
-            const cls = qty === 0 ? 'out' : qty <= 2 ? 'low' : '';
-            return `<span class="size-chip ${cls}">${s}</span>`;
+        tbody.innerHTML = items.map(p => {
+          const st = DB.helpers.stockStatus(p.qty);
+          // Chips taille depuis AppStore.getSizesFor (données API)
+          const szData = AppStore.getSizesFor(p.id);
+          const chips  = (p.sizes||[]).map(s => {
+            const sd = szData.find(x => x.size === s);
+            const q  = sd ? sd.qty : 0;
+            return `<span class="size-chip ${q===0?'out':q<=2?'low':''}">${s}</span>`;
           }).join('');
-
-          return `
-            <tr>
-              <td>
-                <div class="product-cell">
-                  ${DB.helpers.thumbHTML(p)}
-                  <div>
-                    <div class="product-name">${p.name}</div>
-                    <div class="product-sku">${p.sku}${p.color ? ' · ' + p.color : ''}</div>
-                  </div>
-                </div>
-              </td>
-              <td><span class="brand-tag">${p.brand}</span></td>
-              <td><span class="price-cell">${p.price.toLocaleString()} MAD</span></td>
-              <td><div class="sizes-wrap">${sizeChips || '<span class="product-sku">—</span>'}</div></td>
-              <td><span class="qty-cell">${p.qty}</span></td>
-              <td><span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span></td>
-              <td>
-                <div class="action-group">
-                  <button class="action-btn view"   onclick="openDetail(${p.id})"  title="Voir"><i class="fas fa-eye"></i></button>
-                  <button class="action-btn edit"   onclick="openEdit(${p.id})"   title="Modifier" data-role="admin"><i class="fas fa-pen"></i></button>
-                  <button class="action-btn delete" onclick="deleteProduct(${p.id})" title="Supprimer" data-role="admin"><i class="fas fa-trash-alt"></i></button>
-                </div>
-              </td>
-            </tr>`;
+          return `<tr>
+            <td><div class="product-cell">${DB.helpers.thumbHTML(p)}<div>
+              <div class="product-name">${p.name}</div>
+              <div class="product-sku">${p.sku}${p.color?' · '+p.color:''}</div>
+            </div></div></td>
+            <td><span class="brand-tag">${p.brand}</span></td>
+            <td><span class="price-cell">${(p.price||0).toLocaleString()} MAD</span></td>
+            <td><div class="sizes-wrap">${chips||'<span class="product-sku">—</span>'}</div></td>
+            <td><span class="qty-cell">${p.qty}</span></td>
+            <td><span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span></td>
+            <td><div class="action-group">
+              <button class="action-btn view"   onclick="openDetail(${p.id})" title="Voir"><i class="fas fa-eye"></i></button>
+              <button class="action-btn edit"   onclick="openEdit(${p.id})"   title="Modifier" data-role="admin"><i class="fas fa-pen"></i></button>
+              <button class="action-btn delete" onclick="confirmDelete(${p.id})" title="Supprimer" data-role="admin"><i class="fas fa-trash-alt"></i></button>
+            </div></td>
+          </tr>`;
         }).join('');
       }
 
-      renderPagination('pag-btns', 'pag-info', total, currentPage, PER_PAGE, (p) => {
-        currentPage = p;
-        renderTable();
-      });
-
+      renderPagination('pag-btns', 'pag-info', total, _page, PER, p => { _page = p; renderTable(); });
       updateFilters();
+      Auth.applyRoles();
     }
 
-    /* ── Detail Modal ────────────────────────────────────────────── */
+    /* ── Detail Modal ─────────────────────────────────────────── */
     function openDetail(id) {
-      const p = DB.products.getById(id);
+      const p = AppStore.getProduct(id);
       if (!p) return;
 
       const imgEl = document.getElementById('detail-img');
-      if (typeof p.img === 'string' && p.img.startsWith('data:')) {
-        imgEl.innerHTML = `<img src="${p.img}" alt="${p.name}">`;
-      } else {
-        imgEl.textContent = p.img || '👟';
-      }
+      imgEl.innerHTML = typeof p.img === 'string' && p.img.startsWith('data:')
+        ? `<img src="${p.img}" alt="${p.name}">` : '';
+      if (!p.img?.startsWith?.('data:')) imgEl.textContent = p.img || '👟';
 
       document.getElementById('detail-name').textContent  = p.name;
       document.getElementById('detail-sku').textContent   = `SKU: ${p.sku}`;
       document.getElementById('detail-brand').textContent = p.brand;
 
       const st    = DB.helpers.stockStatus(p.qty);
-      const sizes = DB.sizes.getForProduct(p.id);
+      const sizes = AppStore.getSizesFor(id);
       const sizeHtml = sizes.map(s => {
-        const cls = s.qty === 0 ? 'out' : s.qty <= 2 ? 'low' : '';
+        const cls = s.qty===0?'out':s.qty<=2?'low':'';
         return `<div class="detail-size-pill ${cls}"><strong>${s.size}</strong><br><small>${s.qty} u.</small></div>`;
       }).join('');
 
       document.getElementById('detail-body').innerHTML = `
-        <div class="detail-row"><span class="detail-key">Prix</span><span class="detail-val price-cell">${p.price.toLocaleString()} MAD</span></div>
+        <div class="detail-row"><span class="detail-key">Prix</span><span class="detail-val price-cell">${(p.price||0).toLocaleString()} MAD</span></div>
         <div class="detail-row"><span class="detail-key">Stock total</span><span class="detail-val">${p.qty} unités</span></div>
-        <div class="detail-row"><span class="detail-key">Couleur</span><span class="detail-val">${p.color || '—'}</span></div>
+        <div class="detail-row"><span class="detail-key">Couleur</span><span class="detail-val">${p.color||'—'}</span></div>
         <div class="detail-row"><span class="detail-key">Statut</span><span class="stock-badge ${st}">${DB.helpers.stockLabel(st)}</span></div>
-        <div class="detail-row"><span class="detail-key">Description</span><span class="detail-val" style="max-width:240px;text-align:right;font-size:12px">${p.desc || '—'}</span></div>
-        <div style="margin-top:14px">
-          <div class="detail-key" style="margin-bottom:8px">TAILLES DISPONIBLES</div>
-          <div class="detail-sizes">${sizeHtml || '<span style="color:var(--text-dim);font-size:12px">Aucune taille définie</span>'}</div>
+        <div class="detail-row"><span class="detail-key">Description</span><span class="detail-val" style="max-width:240px;text-align:right;font-size:12px">${p.description||p.desc||'—'}</span></div>
+        <div style="margin-top:14px"><div class="detail-key" style="margin-bottom:8px">TAILLES</div>
+          <div class="detail-sizes">${sizeHtml||'<span style="color:var(--text-dim);font-size:12px">Aucune taille</span>'}</div>
         </div>`;
 
-      document.getElementById('detail-edit-btn').onclick = () => {
-        Modal.close('detail-modal');
-        openEdit(id);
-      };
-
+      document.getElementById('detail-edit-btn').onclick = () => { Modal.close('detail-modal'); openEdit(id); };
       Modal.open('detail-modal');
     }
 
-    /* ── Edit Modal ──────────────────────────────────────────────── */
+    /* ── Edit Modal ───────────────────────────────────────────── */
     function openEdit(id) {
-      const p = DB.products.getById(id);
+      const p = AppStore.getProduct(id);
       if (!p) return;
-
-      editId = id;
+      _editId = id;
 
       document.getElementById('edit-name').value  = p.name;
       document.getElementById('edit-sku').value   = p.sku;
@@ -380,93 +285,105 @@
       document.getElementById('edit-price').value = p.price;
       document.getElementById('edit-qty').value   = p.qty;
       document.getElementById('edit-color').value = p.color || '';
-      document.getElementById('edit-desc').value  = p.desc  || '';
-
+      document.getElementById('edit-desc').value  = p.description || p.desc || '';
       SizeBuilder.render('edit-size-builder', p.sizes || []);
 
-      // Show current image
-      const prevEl = document.getElementById('edit-img-preview');
-      if (typeof p.img === 'string' && p.img.startsWith('data:')) {
-        prevEl.innerHTML = `<div class="preview-box"><img src="${p.img}" alt=""></div>`;
-      } else {
-        prevEl.innerHTML = `<div style="font-size:44px;padding:6px">${p.img || '👟'}</div>`;
-      }
+      const prev = document.getElementById('edit-img-preview');
+      prev.innerHTML = typeof p.img === 'string' && p.img.startsWith('data:')
+        ? `<div class="preview-box"><img src="${p.img}" alt=""></div>`
+        : `<div style="font-size:44px;padding:6px">${p.img||'👟'}</div>`;
 
-      // Bind image upload
       document.getElementById('edit-img-input').value = '';
-      editImgFn = ImageUpload.bind('edit-img-input', 'edit-img-preview');
-
+      _editImg = ImageUpload.bind('edit-img-input', 'edit-img-preview');
       Modal.open('edit-modal');
     }
 
-    function saveEdit() {
-      const p = DB.products.getById(editId);
+    async function saveEdit() {
+      const p = AppStore.getProduct(_editId);
       if (!p) return;
-
       const sku = document.getElementById('edit-sku').value.trim();
-      if (DB.products.skuExists(sku, editId)) { Toast.error('Ce SKU existe déjà.'); return; }
+      if (AppStore.get('products').some(p => p.sku === sku && p.id !== +_editId)) { Toast.error('Ce SKU existe déjà.'); return; }
+
+      const btn = document.getElementById('btn-save-edit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Mise à jour…';
 
       const oldQty = p.qty;
       const newQty = parseInt(document.getElementById('edit-qty').value) || 0;
-      const newImg = editImgFn ? editImgFn() : null;
+      const newImg = _editImg ? _editImg() : null;
+      const desc   = document.getElementById('edit-desc').value.trim();
 
-      DB.products.update(editId, {
-        name:  document.getElementById('edit-name').value.trim(),
-        sku,
-        brand: document.getElementById('edit-brand').value.trim(),
-        price: parseFloat(document.getElementById('edit-price').value) || 0,
-        qty:   newQty,
-        color: document.getElementById('edit-color').value.trim(),
-        desc:  document.getElementById('edit-desc').value.trim(),
-        sizes: SizeBuilder.getSelected('edit-size-builder'),
-        img:   newImg || p.img,
-      });
-
-      // Record adjustment movement if qty changed
-      const diff = newQty - oldQty;
-      if (diff !== 0) {
-        DB.movements.add({
-          product_id:   editId,
-          size:         null,
-          type:         'adjust',
-          quantity:     Math.abs(diff),
-          note:         `Ajustement stock (${diff > 0 ? '+' : ''}${diff})`,
-          product_name: p.name,
+      try {
+        // Action via AppStore → API → SQLite → event → re-render auto
+        await AppStore.actions.updateProduct(_editId, {
+          name:  document.getElementById('edit-name').value.trim(), sku,
+          brand: document.getElementById('edit-brand').value.trim(),
+          price: parseFloat(document.getElementById('edit-price').value) || 0,
+          qty: newQty, color: document.getElementById('edit-color').value.trim(),
+          desc, description: desc,
+          sizes: SizeBuilder.getSelected('edit-size-builder'),
+          img: newImg || p.img,
         });
+
+        if (newQty !== oldQty) {
+          const diff = newQty - oldQty;
+          await AppStore.actions.addMovement({
+            product_id: _editId, product_name: p.name, brand: p.brand,
+            size: null, type: diff > 0 ? 'in' : 'out', quantity: Math.abs(diff),
+            note: `Ajustement stock (${diff>0?'+':''}${diff})`,
+          });
+        }
+
+        Modal.close('edit-modal');
+        Toast.success(`"${p.name}" mis à jour.`);
+        // renderTable() est appelé automatiquement via l'event 'products:updated'
+      } catch(e) {
+        Toast.error('Erreur: ' + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Mettre à jour';
       }
-
-      Modal.close('edit-modal');
-      renderTable();
-      Sidebar.updateBadges();
-      Toast.success(`"${p.name}" mis à jour.`);
     }
 
-    /* ── Delete Product ──────────────────────────────────────────── */
-    async function deleteProduct(id) {
-      const p = DB.products.getById(id);
-      const confirmed = await Confirm.show(`Supprimer "${p?.name || 'ce produit'}" définitivement ?`);
-      if (!confirmed) return;
-
-      DB.products.delete(id);
-      renderTable();
-      Sidebar.updateBadges();
-      Toast.success(`"${p?.name || 'Produit'}" supprimé.`);
+    /* ── Delete ───────────────────────────────────────────────── */
+    async function confirmDelete(id) {
+      const p = AppStore.getProduct(id);
+      const ok = await Confirm.show(`Supprimer "${p?.name||'ce produit'}" définitivement ?`);
+      if (!ok) return;
+      try {
+        // Action via AppStore → API → SQLite → event
+        await AppStore.actions.deleteProduct(id);
+        Toast.success(`"${p?.name||'Produit'}" supprimé.`);
+        // renderTable() auto via event
+      } catch(e) {
+        Toast.error('Erreur: ' + e.message);
+      }
     }
 
-    /* ── Event Listeners ─────────────────────────────────────────── */
-    document.getElementById('search-input').addEventListener('input', () => { currentPage = 1; renderTable(); });
-    document.getElementById('filter-brand').addEventListener('change', () => { currentPage = 1; renderTable(); });
-    document.getElementById('filter-size').addEventListener('change',  () => { currentPage = 1; renderTable(); });
-    document.getElementById('filter-stock').addEventListener('change', () => { currentPage = 1; renderTable(); });
+    /* ── Events ──────────────────────────────────────────────── */
+    document.getElementById('search-input').addEventListener('input',  () => { _page=1; renderTable(); });
+    document.getElementById('filter-brand').addEventListener('change', () => { _page=1; renderTable(); });
+    document.getElementById('filter-size').addEventListener('change',  () => { _page=1; renderTable(); });
+    document.getElementById('filter-stock').addEventListener('change', () => { _page=1; renderTable(); });
 
     Modal.bindBackdrop('detail-modal');
     Modal.bindBackdrop('edit-modal');
     Modal.bindBackdrop('confirm-modal');
 
-    /* ── Init ────────────────────────────────────────────────────── */
-    applyURLParams();
-    renderTable();
-  </script>
+    // ✅ Écouter les events AppStore → re-render automatique sans rechargement
+    AppStore.on('products:updated', () => { renderTable(); Sidebar.updateBadges(); });
+    AppStore.on('data:loaded',      () => renderTable());
+    AppStore.on('error', e => Toast.error(e.detail?.message || 'Erreur serveur'));
 
+    /* ── Boot ─────────────────────────────────────────────────── */
+    DB.onReady(async (mode) => {
+      await AppStore.init(mode);
+      // Charger les tailles pour avoir les chips colorées
+      await AppStore.actions.loadAllSizes();
+      applyURLParams();
+      renderTable();
+      AppStore.startPolling(30000);
+    });
+  </script>
 </body>
 </html>

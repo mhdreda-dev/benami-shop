@@ -2,6 +2,9 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Marques — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -50,20 +53,39 @@
   </div>
   <div class="toast-container" id="toast-container"></div>
 
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/store.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
     initPage('Marques', 'Catalogue marques');
     const FLAGS={'USA':'🇺🇸','Germany':'🇩🇪','UK':'🇬🇧','France':'🇫🇷','Italy':'🇮🇹','Japan':'🇯🇵','Morocco':'🇲🇦'};
 
+    /* ── Render — lit depuis AppStore (données API/SQLite) ──────── */
     function renderBrands(){
-      const brands=DB.brands.getAll(),products=DB.products.getAll();
+      // ✅ Données toujours depuis AppStore → SQLite (jamais localStorage)
+      const brands   = AppStore.get('brands');
+      const products = AppStore.get('products');
+      const stats    = AppStore.getStats();
+
       const bs={};
-      products.forEach(p=>{if(!bs[p.brand])bs[p.brand]={count:0,units:0,value:0,out:0};bs[p.brand].count++;bs[p.brand].units+=p.qty;bs[p.brand].value+=p.price*p.qty;if(p.qty===0)bs[p.brand].out++;});
-      const stats=DB.products.getStats();
-      document.getElementById('brands-summary').innerHTML=`<div class="alert-pill"><i class="fas fa-tag"></i>${brands.length} marques</div><div class="alert-pill"><i class="fas fa-shoe-prints"></i>${products.length} modèles</div><div class="alert-pill success"><i class="fas fa-coins"></i>${stats.totalValue.toLocaleString()} MAD</div>`;
+      products.forEach(p=>{
+        if(!bs[p.brand])bs[p.brand]={count:0,units:0,value:0,out:0};
+        bs[p.brand].count++;bs[p.brand].units+=p.qty;
+        bs[p.brand].value+=p.price*p.qty;
+        if(p.qty===0)bs[p.brand].out++;
+      });
+
+      document.getElementById('brands-summary').innerHTML=
+        `<div class="alert-pill"><i class="fas fa-tag"></i>${brands.length} marques</div>`+
+        `<div class="alert-pill"><i class="fas fa-shoe-prints"></i>${products.length} modèles</div>`+
+        `<div class="alert-pill success"><i class="fas fa-coins"></i>${(stats.totalValue||0).toLocaleString()} MAD</div>`;
+
       const grid=document.getElementById('brands-grid');
-      if(!brands.length){grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-tag"></i><h3>Aucune marque</h3><p>Ajoutez votre première marque.</p></div>';return;}
+      if(!brands.length){
+        grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><i class="fas fa-tag"></i><h3>Aucune marque</h3><p>Ajoutez votre première marque.</p></div>';
+        return;
+      }
       grid.innerHTML=brands.map(b=>{
         const s=bs[b.name]||{count:0,units:0,value:0,out:0};
         const flag=FLAGS[b.country]||'🌍';
@@ -83,20 +105,51 @@
       }).join('');
     }
 
-    function addBrand(){
-      const name=document.getElementById('nb-name').value.trim();
-      const country=document.getElementById('nb-country').value.trim();
-      if(!name){Toast.error('Nom requis.');return;}
-      if(DB.brands.getAll().some(b=>b.name.toLowerCase()===name.toLowerCase())){Toast.error('Marque déjà existante.');return;}
-      DB.brands.add(name,country);
-      Modal.close('add-brand-modal');
-      document.getElementById('nb-name').value='';document.getElementById('nb-country').value='';
-      renderBrands();Toast.success(`"${name}" ajoutée !`);
+    /* ── Add brand — POST /api/brands → SQLite (via AppStore) ──── */
+    async function addBrand(){
+      const name    = document.getElementById('nb-name').value.trim();
+      const country = document.getElementById('nb-country').value.trim();
+      if(!name){ Toast.error('Nom requis.'); return; }
+
+      // ✅ Vérification en mémoire depuis AppStore (données SQLite)
+      if(AppStore.get('brands').some(b=>b.name.toLowerCase()===name.toLowerCase())){
+        Toast.error('Marque déjà existante.'); return;
+      }
+
+      const btn = document.querySelector('#add-brand-modal .btn-primary');
+      if(btn){ btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Ajout…'; }
+
+      try {
+        // ✅ Écriture via AppStore → POST /api/brands → SQLite
+        await AppStore.actions.addBrand(name, country);
+        Modal.close('add-brand-modal');
+        document.getElementById('nb-name').value='';
+        document.getElementById('nb-country').value='';
+        Toast.success(`"${name}" ajoutée dans PostgreSQL !`);
+        // renderBrands() déclenché automatiquement par l'event 'brands:updated'
+      } catch(e) {
+        Toast.error('Erreur: ' + e.message);
+      } finally {
+        if(btn){ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Ajouter'; }
+      }
     }
 
     Modal.bindBackdrop('add-brand-modal');
-    renderBrands();
-    Auth.applyRoles(); // appliquer après le rendu
+
+    /* ── Events AppStore → re-render automatique ─────────────────── */
+    AppStore.on('brands:updated',   () => { renderBrands(); Drawer.updateBadges(); });
+    AppStore.on('products:updated', () => { renderBrands(); });
+    AppStore.on('stats:updated',    () => { renderBrands(); });
+    AppStore.on('data:loaded',      () => { renderBrands(); Auth.applyRoles(); });
+    AppStore.on('error', e => Toast.error(e.detail?.message || 'Erreur serveur'));
+
+    /* ── Boot — TOUJOURS via API → SQLite ────────────────────────── */
+    DB.onReady(async (mode) => {
+      await AppStore.init(mode);   // charge brands + products depuis /api/*
+      renderBrands();
+      Auth.applyRoles();
+      AppStore.startPolling(60000);
+    });
   </script>
 </body>
 </html>

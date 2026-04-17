@@ -2,36 +2,47 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BEN AMI SHOP — Connexion</title>
-  <link rel="stylesheet" href="assets/style.css" />
+  <!-- FIX #1: chemin CSS corrigé assets/css/style.css (était assets/style.css) -->
+  <link rel="stylesheet" href="assets/css/style.css" />
   <style>
-    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f4f6fb; }
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#0a0a0a; }
     .auth-card {
-      background:#fff; border-radius:14px; box-shadow:0 4px 32px rgba(0,0,0,.10);
-      padding:2.5rem 2rem; width:100%; max-width:400px;
+      background:#101010; border:1px solid #252525; border-radius:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.6); padding:2.5rem 2rem;
+      width:100%; max-width:400px;
     }
-    .auth-card h1 { text-align:center; margin-bottom:.3rem; font-size:1.6rem; color:#1a1a2e; }
-    .auth-card p.sub { text-align:center; color:#888; margin-bottom:2rem; font-size:.9rem; }
+    .auth-card h1 { text-align:center; margin-bottom:.3rem; font-size:1.6rem; color:#f0f0f0; font-family:'Syne',sans-serif; font-weight:800; }
+    .auth-card p.sub { text-align:center; color:#808080; margin-bottom:2rem; font-size:.9rem; }
     .form-group { margin-bottom:1.2rem; }
-    .form-group label { display:block; margin-bottom:.4rem; font-weight:600; color:#333; font-size:.9rem; }
+    .form-group label { display:block; margin-bottom:.4rem; font-weight:600; color:#c0c0c0; font-size:.9rem; }
     .form-group input {
-      width:100%; padding:.75rem 1rem; border:1.5px solid #dde1eb; border-radius:8px;
+      width:100%; padding:.75rem 1rem; border:1.5px solid #303030; border-radius:10px;
       font-size:1rem; transition:border .2s; box-sizing:border-box;
+      background:#181818; color:#f0f0f0; font-family:'DM Sans',sans-serif;
     }
-    .form-group input:focus { border-color:#4f46e5; outline:none; }
-    .btn-primary {
-      width:100%; padding:.8rem; background:#4f46e5; color:#fff; border:none;
-      border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; transition:background .2s;
+    .form-group input:focus { border-color:#f97316; outline:none; }
+    .btn-login {
+      width:100%; padding:.85rem; background:#f97316; color:#fff; border:none;
+      border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer;
+      transition:background .2s; font-family:'DM Sans',sans-serif;
     }
-    .btn-primary:hover { background:#3730a3; }
-    .btn-primary:disabled { background:#a5b4fc; cursor:not-allowed; }
-    .msg { margin-top:1rem; text-align:center; font-size:.9rem; padding:.6rem; border-radius:6px; display:none; }
-    .msg.error { background:#fee2e2; color:#b91c1c; display:block; }
-    .msg.success { background:#dcfce7; color:#15803d; display:block; }
-    .auth-footer { text-align:center; margin-top:1.5rem; font-size:.9rem; color:#666; }
-    .auth-footer a { color:#4f46e5; text-decoration:none; font-weight:600; }
-    .logo { text-align:center; font-size:2rem; margin-bottom:.5rem; }
+    .btn-login:hover { background:#ea6b0a; }
+    .btn-login:disabled { background:#7c3d14; cursor:not-allowed; opacity:.6; }
+    .msg { margin-top:1rem; text-align:center; font-size:.9rem; padding:.7rem; border-radius:8px; display:none; }
+    .msg.error   { background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3); display:block; }
+    .msg.success { background:rgba(34,197,94,.12);  color:#22c55e; border:1px solid rgba(34,197,94,.25); display:block; }
+    .auth-footer { text-align:center; margin-top:1.5rem; font-size:.88rem; color:#606060; }
+    .auth-footer a { color:#f97316; text-decoration:none; font-weight:600; }
+    .auth-footer a:hover { color:#ea6b0a; }
+    .logo { text-align:center; font-size:2.4rem; margin-bottom:.5rem; }
+    .logo-sub { text-align:center; font-size:.7rem; font-weight:700; color:#f97316; letter-spacing:.15em; text-transform:uppercase; margin-bottom:1.2rem; }
+    .hint { background:rgba(249,115,22,.08); border:1px solid rgba(249,115,22,.2); border-radius:8px; padding:.6rem 1rem; font-size:.78rem; color:#a0a0a0; margin-bottom:1.4rem; text-align:center; }
+    .hint strong { color:#f97316; }
   </style>
 </head>
 <body>
@@ -40,16 +51,20 @@
     <h1>Ben Ami Shop</h1>
     <p class="sub">Connectez-vous à votre espace</p>
 
+    <div class="hint">
+      Utilisez votre compte administrateur ou employé.
+    </div>
+
     <div class="form-group">
       <label for="email">Adresse e-mail</label>
-      <input type="email" id="email" placeholder="admin@benami.shop" autocomplete="email" />
+      <input type="email" id="email" placeholder="vous@exemple.com" autocomplete="email" />
     </div>
     <div class="form-group">
       <label for="password">Mot de passe</label>
       <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
     </div>
 
-    <button class="btn-primary" id="btnLogin">Se connecter</button>
+    <button class="btn-login" id="btnLogin">Se connecter</button>
     <div class="msg" id="msg"></div>
 
     <div class="auth-footer">
@@ -57,60 +72,191 @@
     </div>
   </div>
 
+  <script src="config.js?v=9"></script>
   <script>
-    // Rediriger si déjà connecté
-    if (localStorage.getItem('token')) {
-      window.location.href = '/';
+    /* ================================================================
+       LOGIN — API ONLY
+       ✅ RÈGLE : La connexion passe TOUJOURS par POST /api/login.
+       ✅ TOKEN : Écrit ICI, une seule fois, nulle part ailleurs.
+                  db.js ne stocke plus le token (auth.login() supprimé).
+       ✅ STOCKAGE : localStorage UNIQUEMENT. Pas de fallback sessionStorage.
+       ================================================================ */
+
+    /* ── ÉTAPE 1 : REDIRIGER SI DÉJÀ CONNECTÉ ───────────────────────
+       Vérifie localStorage UNIQUEMENT (seule source de vérité).
+       Un token en sessionStorage uniquement n'est pas considéré comme
+       une session valide — il serait perdu à la fermeture du navigateur.
+    ─────────────────────────────────────────────────────────────────── */
+    (function redirectIfLoggedIn() {
+      let token = '';
+      try { token = localStorage.getItem('token') || ''; } catch(e) {}
+      if (token) {
+        console.log('[LOGIN] Token existant (localStorage) — redirection vers index.html');
+        window.location.replace('index.html');
+      }
+    })();
+
+    /* ── ÉTAPE 2 : NETTOYAGE DES CLÉS OBSOLÈTES SEULEMENT ───────────
+       Supprime les clés legacy des anciennes versions — sans toucher
+       au token/user actuels (qui viennent d'être vérifiés ci-dessus).
+    ─────────────────────────────────────────────────────────────────── */
+    ['ba_users', 'ba_auth', 'offline_users', 'users',
+     'ba_employees', 'ba_admins', 'local_users',
+     'ba_products', 'ba_brands', 'ba_movements', 'ba_sizes'].forEach(k => {
+      try { localStorage.removeItem(k); } catch(e) {}
+    });
+
+    /* ── FONCTION PRINCIPALE DE CONNEXION ───────────────────────────── */
+
+    /* Persist session data to localStorage ONLY.
+       localStorage is the single source of truth for authentication.
+       sessionStorage is ephemeral (cleared on browser close) and must
+       never be used for auth data that is expected to survive a restart.
+
+       Write order: token → user → app_version.
+       If app_version is the last key written, a partial failure
+       (e.g. quota error mid-write) leaves app_version absent, so the
+       version guard fires next load and cleanly re-migrates the data
+       rather than silently leaving token in sessionStorage.           */
+    function _storeSession(data) {
+      // Purge any stale sessionStorage auth data from old code paths
+      try {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+        sessionStorage.removeItem('app_version');
+      } catch(e) {}
+
+      try {
+        localStorage.setItem('token',       data.token);
+        localStorage.setItem('user',        JSON.stringify(data.user));
+        localStorage.setItem('app_version', '3.0.0');
+        return true;
+      } catch(e) {
+        // localStorage is blocked (private mode, security policy, full storage).
+        // Do NOT fall back to sessionStorage — a token stored there would be
+        // lost on browser close, making persistence unpredictable.
+        console.error('[LOGIN] ❌ localStorage indisponible — session impossible:', e.message);
+        return false;
+      }
     }
 
-    document.getElementById('btnLogin').addEventListener('click', async () => {
+    /* Single fetch attempt with AbortController timeout.
+       Returns: { ok:true, data }  — server responded (success or HTTP error)
+                { ok:false, retry:true }  — network/timeout error, caller may retry
+                { ok:false, retry:false } — other error, do not retry             */
+    function _apiUrl(path) {
+      const cfg = window.__APP_CONFIG__ || {};
+      const base = (typeof cfg.apiBase === 'string' && cfg.apiBase.trim())
+        ? cfg.apiBase.trim().replace(/\/+$/, '')
+        : '/api';
+      return base + (path.startsWith('/') ? path : '/' + path);
+    }
+
+    async function _attemptLogin(email, password, timeoutMs) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+      // After 8 s with no response → show "cold start" hint
+      const wakeTimer = setTimeout(() => {
+        const msg = document.getElementById('msg');
+        if (document.getElementById('btnLogin').disabled) {
+          msg.className   = 'msg error';
+          msg.textContent = '⏳ Le serveur se réveille… Render peut prendre jusqu\'à 60 s au premier démarrage.';
+        }
+      }, 8000);
+
+      try {
+        const res = await fetch(_apiUrl('/login'), {
+          method : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body   : JSON.stringify({ email, password }),
+          signal : controller.signal,
+        });
+        clearTimeout(timer);
+        clearTimeout(wakeTimer);
+
+        let data;
+        try { data = await res.json(); }
+        catch(e) { return { ok: false, retry: false, msg: 'Réponse serveur invalide.' }; }
+
+        if (!res.ok) {
+          // Server-side error (wrong credentials, rate limit, etc.) — do NOT retry
+          return { ok: false, retry: false, msg: data.error || 'Identifiants incorrects.' };
+        }
+        return { ok: true, data };
+
+      } catch(e) {
+        clearTimeout(timer);
+        clearTimeout(wakeTimer);
+        const isNetwork = e.name === 'AbortError' ||
+                          ['Failed to fetch','NetworkError','Load failed','fetch'].some(s => (e.message||'').includes(s));
+        console.warn('[LOGIN] ⚠️ Tentative échouée:', e.name, e.message);
+        return { ok: false, retry: isNetwork, msg: e.message };
+      }
+    }
+
+    async function doLogin() {
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const msg      = document.getElementById('msg');
       const btn      = document.getElementById('btnLogin');
 
-      msg.className = 'msg';
+      msg.className   = 'msg';
       msg.textContent = '';
 
       if (!email || !password) {
-        msg.className = 'msg error';
+        msg.className   = 'msg error';
         msg.textContent = 'Veuillez remplir tous les champs.';
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = 'Connexion...';
+      btn.disabled    = true;
+      btn.textContent = 'Connexion en cours…';
 
       try {
-        const res  = await fetch('/api/login', {
-          method : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body   : JSON.stringify({ email, password })
-        });
-        const data = await res.json();
+        // ── First attempt (40 s timeout covers Render cold start) ──
+        let result = await _attemptLogin(email, password, 40000);
 
-        if (!res.ok) {
+        if (!result.ok && result.retry) {
+          // Network / timeout — wait 6 s then try once more
+          btn.textContent = 'Nouvelle tentative…';
           msg.className   = 'msg error';
-          msg.textContent = data.error || 'Identifiants incorrects.';
-        } else {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user',  JSON.stringify(data.user));
-          msg.className   = 'msg success';
-          msg.textContent = 'Connexion réussie ! Redirection…';
-          setTimeout(() => { window.location.href = '/'; }, 800);
+          msg.textContent = '🔄 Connexion lente. Nouvelle tentative dans 6 s…';
+          await new Promise(r => setTimeout(r, 6000));
+          result = await _attemptLogin(email, password, 40000);
         }
-      } catch (e) {
-        msg.className   = 'msg error';
-        msg.textContent = 'Erreur réseau. Réessayez.';
+
+        if (!result.ok) {
+          msg.className   = 'msg error';
+          msg.textContent = result.retry
+            ? '🔴 Serveur inaccessible après 2 tentatives. Vérifiez que node server.js est démarré.'
+            : result.msg || 'Identifiants incorrects.';
+          return;
+        }
+
+        // ── Success ──
+        const stored = _storeSession(result.data);
+        console.log('[LOGIN] ✅ Connexion réussie —', result.data.user.email, '| role:', result.data.user.role);
+
+        msg.className   = 'msg success';
+        msg.textContent = stored
+          ? 'Connexion réussie ! Redirection…'
+          : '⚠️ Le stockage local est bloqué par votre navigateur (mode privé ou extension). Activez les cookies pour continuer.';
+
+        if (stored) setTimeout(() => { window.location.replace('index.html'); }, 800);
+
       } finally {
         btn.disabled    = false;
         btn.textContent = 'Se connecter';
       }
-    });
+    }
 
-    // Valider avec Entrée
+    document.getElementById('btnLogin').addEventListener('click', doLogin);
     document.getElementById('password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('btnLogin').click();
+      if (e.key === 'Enter') doLogin();
+    });
+    document.getElementById('email').addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('password').focus();
     });
   </script>
 </body>

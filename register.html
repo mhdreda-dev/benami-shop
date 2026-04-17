@@ -1,38 +1,58 @@
 <!DOCTYPE html>
+<!--
+  BEN AMI SHOP — register.html
+  FIXES:
+  - Bug: CSS était assets/style.css → corrigé en assets/css/style.css
+  - Bug: rôle "user" n'existe pas en base → supprimé (employee/admin seulement)
+  - Bug: redirection vers /login.html (absolu) → login.html (relatif)
+  - Amélioration: mot de passe min 8 car (cohérent avec le serveur)
+  - Amélioration: style cohérent avec le reste de l'app (dark mode)
+-->
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BEN AMI SHOP — Inscription</title>
-  <link rel="stylesheet" href="assets/style.css" />
+  <!-- FIX: chemin CSS corrigé -->
+  <link rel="stylesheet" href="assets/css/style.css" />
   <style>
-    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f4f6fb; }
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#0a0a0a; }
     .auth-card {
-      background:#fff; border-radius:14px; box-shadow:0 4px 32px rgba(0,0,0,.10);
-      padding:2.5rem 2rem; width:100%; max-width:420px;
+      background:#101010; border:1px solid #252525; border-radius:16px;
+      box-shadow:0 8px 40px rgba(0,0,0,.6); padding:2.5rem 2rem;
+      width:100%; max-width:430px;
     }
-    .auth-card h1 { text-align:center; margin-bottom:.3rem; font-size:1.6rem; color:#1a1a2e; }
-    .auth-card p.sub { text-align:center; color:#888; margin-bottom:2rem; font-size:.9rem; }
-    .form-group { margin-bottom:1.2rem; }
-    .form-group label { display:block; margin-bottom:.4rem; font-weight:600; color:#333; font-size:.9rem; }
+    .auth-card h1 { text-align:center; margin-bottom:.3rem; font-size:1.5rem; color:#f0f0f0; font-family:'Syne',sans-serif; font-weight:800; }
+    .auth-card p.sub { text-align:center; color:#808080; margin-bottom:2rem; font-size:.9rem; }
+    .form-group { margin-bottom:1.1rem; }
+    .form-group label { display:block; margin-bottom:.4rem; font-weight:600; color:#c0c0c0; font-size:.88rem; }
     .form-group input, .form-group select {
-      width:100%; padding:.75rem 1rem; border:1.5px solid #dde1eb; border-radius:8px;
-      font-size:1rem; transition:border .2s; box-sizing:border-box; background:#fff;
+      width:100%; padding:.75rem 1rem; border:1.5px solid #303030; border-radius:10px;
+      font-size:.95rem; transition:border .2s; box-sizing:border-box;
+      background:#181818; color:#f0f0f0; font-family:'DM Sans',sans-serif;
     }
-    .form-group input:focus, .form-group select:focus { border-color:#4f46e5; outline:none; }
-    .btn-primary {
-      width:100%; padding:.8rem; background:#4f46e5; color:#fff; border:none;
-      border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer; transition:background .2s;
+    .form-group input:focus, .form-group select:focus { border-color:#f97316; outline:none; }
+    .form-group select option { background:#181818; color:#f0f0f0; }
+    .hint { font-size:.73rem; color:#606060; margin-top:.25rem; }
+    .btn-register {
+      width:100%; padding:.85rem; background:#f97316; color:#fff; border:none;
+      border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer;
+      transition:background .2s; font-family:'DM Sans',sans-serif; margin-top:.25rem;
     }
-    .btn-primary:hover { background:#3730a3; }
-    .btn-primary:disabled { background:#a5b4fc; cursor:not-allowed; }
-    .msg { margin-top:1rem; text-align:center; font-size:.9rem; padding:.6rem; border-radius:6px; display:none; }
-    .msg.error { background:#fee2e2; color:#b91c1c; display:block; }
-    .msg.success { background:#dcfce7; color:#15803d; display:block; }
-    .auth-footer { text-align:center; margin-top:1.5rem; font-size:.9rem; color:#666; }
-    .auth-footer a { color:#4f46e5; text-decoration:none; font-weight:600; }
-    .logo { text-align:center; font-size:2rem; margin-bottom:.5rem; }
-    .hint { font-size:.78rem; color:#999; margin-top:.25rem; }
+    .btn-register:hover { background:#ea6b0a; }
+    .btn-register:disabled { background:#7c3d14; cursor:not-allowed; opacity:.6; }
+    .msg { margin-top:1rem; text-align:center; font-size:.9rem; padding:.7rem; border-radius:8px; display:none; }
+    .msg.error   { background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3); display:block; }
+    .msg.success { background:rgba(34,197,94,.12);  color:#22c55e; border:1px solid rgba(34,197,94,.25); display:block; }
+    .auth-footer { text-align:center; margin-top:1.5rem; font-size:.88rem; color:#606060; }
+    .auth-footer a { color:#f97316; text-decoration:none; font-weight:600; }
+    .auth-footer a:hover { color:#ea6b0a; }
+    .logo { text-align:center; font-size:2.4rem; margin-bottom:.5rem; }
+    .pw-strength { height:3px; border-radius:99px; margin-top:.35rem; background:#252525; overflow:hidden; }
+    .pw-strength-bar { height:100%; border-radius:99px; transition:width .3s, background .3s; width:0; }
   </style>
 </head>
 <body>
@@ -51,22 +71,26 @@
     </div>
     <div class="form-group">
       <label for="password">Mot de passe</label>
-      <input type="password" id="password" placeholder="Min. 6 caractères" />
-      <div class="hint">Au moins 6 caractères.</div>
+      <input type="password" id="password" placeholder="Min. 8 caractères" autocomplete="new-password" />
+      <!-- FIX: min 8 caractères pour correspondre à la validation du serveur -->
+      <div class="hint">Au moins 8 caractères.</div>
+      <div class="pw-strength"><div class="pw-strength-bar" id="pw-bar"></div></div>
     </div>
     <div class="form-group">
       <label for="confirm">Confirmer le mot de passe</label>
-      <input type="password" id="confirm" placeholder="••••••••" />
+      <input type="password" id="confirm" placeholder="••••••••" autocomplete="new-password" />
     </div>
     <div class="form-group">
       <label for="role">Rôle</label>
+      <!-- FIX: rôle "user" n'existe pas → supprimé. Options: employee | admin -->
       <select id="role">
-        <option value="user">Utilisateur</option>
+        <option value="employee">Employé</option>
         <option value="admin">Administrateur</option>
       </select>
+      <div class="hint">Les rôles sont gérables ensuite depuis la page Utilisateurs.</div>
     </div>
 
-    <button class="btn-primary" id="btnRegister">Créer le compte</button>
+    <button class="btn-register" id="btnRegister">Créer le compte</button>
     <div class="msg" id="msg"></div>
 
     <div class="auth-footer">
@@ -74,8 +98,51 @@
     </div>
   </div>
 
+  <script src="config.js?v=9"></script>
   <script>
-    document.getElementById('btnRegister').addEventListener('click', async () => {
+    /* ================================================================
+       REGISTER — API ONLY
+       ⛔ RÈGLE ABSOLUE : L'inscription passe TOUJOURS par POST /api/register
+      ⛔ Les comptes sont TOUJOURS créés dans PostgreSQL (jamais localStorage)
+       ⛔ Pas de mode offline pour la création de compte
+      ✅ Source unique de vérité = PostgreSQL via l'API
+       ================================================================ */
+
+    // ⛔ Supprimer les clés legacy — jamais de données en cache localStorage
+    ;['ba_users', 'ba_auth', 'offline_users', 'users',
+      'ba_employees', 'ba_admins', 'local_users',
+      'ba_products', 'ba_brands', 'ba_movements', 'ba_sizes'].forEach(k => {
+      try {
+        if (localStorage.getItem(k)) {
+          localStorage.removeItem(k);
+          console.warn('[REGISTER] 🧹 Clé legacy supprimée:', k);
+        }
+      } catch(e) {}
+    });
+
+    // ✅ Rediriger si déjà connecté — vérifie localStorage ET sessionStorage
+    //    (ancienne version vérifiait localStorage uniquement → échec sur iOS mode privé)
+    (function redirectIfLoggedIn() {
+      let token = '';
+      try { token = localStorage.getItem('token') || ''; } catch(e) {}
+      if (!token) { try { token = sessionStorage.getItem('token') || ''; } catch(e) {} }
+      if (token) {
+        window.location.replace('index.html');
+      }
+    })();
+
+    // Indicateur force mot de passe
+    document.getElementById('password').addEventListener('input', function() {
+      const len = this.value.length;
+      const bar = document.getElementById('pw-bar');
+      if (len === 0)     { bar.style.width='0';    bar.style.background='transparent'; }
+      else if (len < 6)  { bar.style.width='25%';  bar.style.background='#ef4444'; }
+      else if (len < 8)  { bar.style.width='50%';  bar.style.background='#eab308'; }
+      else if (len < 12) { bar.style.width='75%';  bar.style.background='#f97316'; }
+      else               { bar.style.width='100%'; bar.style.background='#22c55e'; }
+    });
+
+    async function doRegister() {
       const name     = document.getElementById('name').value.trim();
       const email    = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
@@ -87,14 +154,15 @@
       msg.className   = 'msg';
       msg.textContent = '';
 
+      // Validations côté client
       if (!name || !email || !password || !confirm) {
         msg.className   = 'msg error';
         msg.textContent = 'Veuillez remplir tous les champs.';
         return;
       }
-      if (password.length < 6) {
+      if (password.length < 8) {
         msg.className   = 'msg error';
-        msg.textContent = 'Le mot de passe doit contenir au moins 6 caractères.';
+        msg.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
         return;
       }
       if (password !== confirm) {
@@ -102,33 +170,62 @@
         msg.textContent = 'Les mots de passe ne correspondent pas.';
         return;
       }
+      // Valider le rôle — uniquement employee ou admin
+      if (!['employee', 'admin'].includes(role)) {
+        msg.className   = 'msg error';
+        msg.textContent = 'Rôle invalide.';
+        return;
+      }
 
       btn.disabled    = true;
-      btn.textContent = 'Création…';
+      btn.textContent = 'Création en cours…';
 
       try {
-        const res  = await fetch('/api/register', {
+        /* ── Appel API — TOUJOURS vers le serveur Node.js → PostgreSQL ── */
+        const cfg = window.__APP_CONFIG__ || {};
+        const base = (typeof cfg.apiBase === 'string' && cfg.apiBase.trim())
+          ? cfg.apiBase.trim().replace(/\/+$/, '')
+          : '/api';
+
+        const res  = await fetch(base + '/register', {
           method : 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body   : JSON.stringify({ name, email, password, role })
+          body   : JSON.stringify({ name, email, password, role }),
         });
-        const data = await res.json();
+
+        let data;
+        try { data = await res.json(); }
+        catch(e) { throw new Error('Réponse serveur invalide.'); }
 
         if (!res.ok) {
+          // ⛔ Pas de fallback localStorage — afficher l'erreur API
           msg.className   = 'msg error';
           msg.textContent = data.error || 'Erreur lors de l\'inscription.';
         } else {
+          // ✅ Compte créé dans PostgreSQL — redirection vers la connexion
           msg.className   = 'msg success';
-          msg.textContent = 'Compte créé ! Redirection vers la connexion…';
-          setTimeout(() => { window.location.href = '/login.html'; }, 1200);
+          msg.textContent = '✅ Compte créé ! Redirection vers la connexion…';
+          setTimeout(() => { window.location.href = 'login.html'; }, 1200);
         }
+
       } catch (e) {
+        // ⛔ Pas de fallback localStorage même si le réseau est coupé
         msg.className   = 'msg error';
-        msg.textContent = 'Erreur réseau. Réessayez.';
+        if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+          msg.textContent = '🔴 Serveur inaccessible. Lancez : node server.js\n' +
+                            'La création de compte nécessite le serveur (PostgreSQL).';
+        } else {
+          msg.textContent = e.message || 'Erreur réseau. Vérifiez que node server.js est démarré.';
+        }
       } finally {
         btn.disabled    = false;
         btn.textContent = 'Créer le compte';
       }
+    }
+
+    document.getElementById('btnRegister').addEventListener('click', doRegister);
+    document.getElementById('confirm').addEventListener('keydown', e => {
+      if (e.key === 'Enter') doRegister();
     });
   </script>
 </body>

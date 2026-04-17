@@ -1,75 +1,121 @@
 <!DOCTYPE html>
+<!--
+  BEN AMI SHOP — users.html
+  FIXES:
+  - Redirection vers login.html (relatif, pas /login.html)
+  - Style dark mode cohérent avec le reste de l'app
+  - Fenêtre modale utilise le système Modal de app.js
+-->
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Utilisateurs — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
-    /* ── Users page styles ── */
-    .users-toolbar { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
-    .users-toolbar h2 { font-size:1.1rem; font-weight:700; color:var(--text-primary,#1a1a2e); margin:0; }
-    .btn-add-user { display:flex; align-items:center; gap:.5rem; background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:.6rem 1.2rem; font-size:.9rem; font-weight:700; cursor:pointer; transition:background .2s; }
-    .btn-add-user:hover { background:#3730a3; }
+    .users-toolbar {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap;
+    }
+    .users-count-label {
+      font-family:'Syne',sans-serif; font-size:1rem; font-weight:700;
+      color:var(--text,#f0f0f0);
+    }
 
-    .users-table-wrap { background:#fff; border-radius:14px; box-shadow:0 2px 16px rgba(0,0,0,.07); overflow:hidden; }
+    .users-table-wrap {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:var(--radius,12px); overflow:hidden;
+    }
     table.users-table { width:100%; border-collapse:collapse; }
-    table.users-table thead th { background:#f8f9ff; padding:.75rem 1rem; text-align:left; font-size:.8rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #eee; }
-    table.users-table tbody tr { border-bottom:1px solid #f2f2f2; transition:background .15s; }
-    table.users-table tbody tr:hover { background:#fafafe; }
-    table.users-table td { padding:.85rem 1rem; font-size:.9rem; color:#333; }
+    table.users-table thead th {
+      background:var(--surface-2,#181818); padding:.7rem 1rem;
+      text-align:left; font-size:.72rem; font-weight:700;
+      color:var(--text-muted,#808080); text-transform:uppercase;
+      letter-spacing:.05em; border-bottom:1px solid var(--border,#252525);
+    }
+    table.users-table tbody tr {
+      border-bottom:1px solid var(--border,#252525); transition:background .12s;
+    }
+    table.users-table tbody tr:last-child { border-bottom:none; }
+    table.users-table tbody tr:hover { background:var(--surface-2,#181818); }
+    table.users-table td { padding:.85rem 1rem; font-size:.88rem; }
 
-    .user-avatar-cell { display:flex; align-items:center; gap:.75rem; }
-    .u-avatar { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.9rem; color:#fff; flex-shrink:0; }
-    .u-avatar.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
-    .u-avatar.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
-    .u-name { font-weight:600; color:#1a1a2e; }
-    .u-email { font-size:.8rem; color:#888; }
+    .user-av-cell { display:flex; align-items:center; gap:.75rem; }
+    .u-avatar-sm {
+      width:38px; height:38px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:.85rem; color:#fff; flex-shrink:0;
+    }
+    .u-avatar-sm.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
+    .u-avatar-sm.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
+    .u-name  { font-size:.88rem; font-weight:600; color:var(--text,#f0f0f0); }
+    .u-email { font-size:.74rem; color:var(--text-muted,#808080); }
 
-    .role-badge { display:inline-flex; align-items:center; gap:.35rem; padding:.25rem .75rem; border-radius:999px; font-size:.78rem; font-weight:700; }
-    .role-badge.admin    { background:#ede9fe; color:#5b21b6; }
-    .role-badge.employee { background:#fff7ed; color:#c2410c; }
+    .role-badge {
+      display:inline-flex; align-items:center; gap:.35rem;
+      padding:.25rem .75rem; border-radius:999px; font-size:.72rem; font-weight:700;
+    }
+    .role-badge.admin    { background:rgba(91,33,182,.2);  color:#a855f7; border:1px solid rgba(91,33,182,.3); }
+    .role-badge.employee { background:rgba(194,65,12,.15); color:#f97316; border:1px solid rgba(194,65,12,.25); }
 
-    .status-badge { display:inline-flex; align-items:center; gap:.35rem; padding:.25rem .65rem; border-radius:999px; font-size:.78rem; font-weight:600; }
-    .status-badge.active   { background:#dcfce7; color:#15803d; }
-    .status-badge.inactive { background:#fee2e2; color:#b91c1c; }
+    .status-badge {
+      display:inline-flex; align-items:center; gap:.35rem;
+      padding:.22rem .65rem; border-radius:999px; font-size:.72rem; font-weight:600;
+    }
+    .status-badge.active   { background:rgba(34,197,94,.12); color:#22c55e; border:1px solid rgba(34,197,94,.25); }
+    .status-badge.inactive { background:rgba(239,68,68,.12); color:#ef4444; border:1px solid rgba(239,68,68,.25); }
 
-    .action-btns { display:flex; gap:.5rem; }
-    .btn-icon { width:32px; height:32px; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:.8rem; transition:all .2s; }
-    .btn-icon.edit   { background:#ede9fe; color:#5b21b6; }
+    .action-btns { display:flex; gap:.4rem; }
+    .btn-icon {
+      width:32px; height:32px; border:none; border-radius:8px;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:.78rem; transition:all .15s;
+    }
+    .btn-icon.edit   { background:rgba(91,33,182,.15);  color:#a855f7; }
     .btn-icon.edit:hover   { background:#5b21b6; color:#fff; }
-    .btn-icon.toggle { background:#fff7ed; color:#c2410c; }
-    .btn-icon.toggle:hover { background:#c2410c; color:#fff; }
-    .btn-icon.del    { background:#fee2e2; color:#b91c1c; }
+    .btn-icon.toggle { background:rgba(234,179,8,.12);  color:#eab308; }
+    .btn-icon.toggle:hover { background:#854d0e; color:#fff; }
+    .btn-icon.del    { background:rgba(239,68,68,.12);  color:#ef4444; }
     .btn-icon.del:hover    { background:#b91c1c; color:#fff; }
 
-    /* Modal */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:#fff; border-radius:16px; padding:2rem; width:100%; max-width:460px; box-shadow:0 8px 40px rgba(0,0,0,.2); }
-    .modal-box h3 { margin:0 0 1.5rem; font-size:1.15rem; font-weight:700; color:#1a1a2e; }
-    .form-row { margin-bottom:1rem; }
-    .form-row label { display:block; font-size:.85rem; font-weight:600; margin-bottom:.35rem; color:#444; }
-    .form-row input, .form-row select { width:100%; padding:.7rem .9rem; border:1.5px solid #dde1eb; border-radius:8px; font-size:.95rem; box-sizing:border-box; transition:border .2s; background:#fff; }
-    .form-row input:focus, .form-row select:focus { border-color:#4f46e5; outline:none; }
-    .form-row .hint { font-size:.75rem; color:#aaa; margin-top:.25rem; }
-    .modal-actions { display:flex; gap:.75rem; margin-top:1.5rem; justify-content:flex-end; }
-    .btn-cancel { background:#f3f4f6; color:#555; border:none; border-radius:8px; padding:.65rem 1.2rem; font-weight:600; cursor:pointer; }
-    .btn-save   { background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:.65rem 1.4rem; font-weight:700; cursor:pointer; }
-    .btn-save:hover { background:#3730a3; }
-    .modal-err { color:#b91c1c; font-size:.85rem; margin-top:.5rem; display:none; }
+    /* Modal form fields */
+    .user-modal-form .form-group { margin-bottom:1rem; }
+    .user-modal-form label {
+      display:block; font-size:.82rem; font-weight:600;
+      color:var(--text-muted,#808080); margin-bottom:.4rem;
+    }
+    .user-modal-form input,
+    .user-modal-form select {
+      width:100%; padding:.7rem .9rem;
+      background:var(--surface-2,#181818);
+      border:1.5px solid var(--border-2,#303030);
+      border-radius:8px; color:var(--text,#f0f0f0);
+      font-size:.9rem; font-family:inherit; outline:none; box-sizing:border-box;
+    }
+    .user-modal-form input:focus,
+    .user-modal-form select:focus { border-color:#f97316; }
+    .user-modal-form select option { background:var(--surface-2,#181818); }
+    .hint-small { font-size:.72rem; color:var(--text-dim,#484848); margin-top:.25rem; }
 
-    /* Empty state */
-    .empty-state { text-align:center; padding:3rem; color:#aaa; }
-    .empty-state i { font-size:2.5rem; margin-bottom:1rem; display:block; }
+    .modal-err {
+      margin-top:.75rem; padding:.6rem .9rem; border-radius:8px; font-size:.82rem;
+      background:rgba(239,68,68,.12); color:#ef4444;
+      border:1px solid rgba(239,68,68,.25); display:none;
+    }
 
     /* Access denied */
-    #access-denied { display:none; text-align:center; padding:4rem 2rem; }
-    #access-denied i { font-size:3rem; color:#b91c1c; display:block; margin-bottom:1rem; }
-    #access-denied h2 { color:#1a1a2e; margin-bottom:.5rem; }
-    #access-denied p  { color:#888; }
+    .access-denied-box {
+      text-align:center; padding:5rem 2rem;
+    }
+    .access-denied-box i { font-size:3rem; color:#ef4444; display:block; margin-bottom:1rem; }
+    .access-denied-box h2 { font-family:'Syne',sans-serif; margin-bottom:.5rem; }
+    .access-denied-box p  { color:var(--text-muted); }
   </style>
 </head>
 <body>
@@ -83,18 +129,18 @@
         <p>Créez et gérez les comptes admin et employés</p>
       </div>
 
-      <!-- Accès refusé si non-admin -->
-      <div id="access-denied">
+      <!-- Access denied (non-admin) -->
+      <div id="access-denied-box" class="access-denied-box" style="display:none">
         <i class="fas fa-lock"></i>
         <h2>Accès restreint</h2>
         <p>Cette page est réservée aux administrateurs.</p>
       </div>
 
-      <!-- Contenu admin -->
+      <!-- Admin content -->
       <div id="admin-content" style="display:none">
         <div class="users-toolbar">
-          <h2 id="users-count">Chargement…</h2>
-          <button class="btn-add-user" onclick="openModal()">
+          <span class="users-count-label" id="users-count">Chargement…</span>
+          <button class="btn btn-primary" onclick="openModal()">
             <i class="fas fa-user-plus"></i> Nouvel utilisateur
           </button>
         </div>
@@ -111,7 +157,9 @@
               </tr>
             </thead>
             <tbody id="users-tbody">
-              <tr><td colspan="5"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Chargement…</div></td></tr>
+              <tr><td colspan="5" style="padding:3rem;text-align:center;color:var(--text-muted)">
+                <i class="fas fa-spinner fa-spin"></i> Chargement…
+              </td></tr>
             </tbody>
           </table>
         </div>
@@ -122,84 +170,98 @@
 
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- Modal créer / éditer -->
+  <!-- ── USER MODAL (créer / éditer) ───────────────────────────── -->
   <div class="modal-overlay" id="user-modal">
-    <div class="modal-box">
-      <h3 id="modal-title">Nouvel utilisateur</h3>
-      <input type="hidden" id="edit-id" value="" />
-
-      <div class="form-row">
-        <label>Nom complet</label>
-        <input type="text" id="f-name" placeholder="Mohamed Reda" />
+    <div class="modal" style="width:460px">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">Nouvel utilisateur</div>
+        <div class="modal-close" onclick="Modal.close('user-modal')"><i class="fas fa-times"></i></div>
       </div>
-      <div class="form-row">
-        <label>Email</label>
-        <input type="email" id="f-email" placeholder="user@benami.shop" />
+      <div class="modal-body user-modal-form">
+        <input type="hidden" id="edit-id" value="" />
+        <div class="form-group">
+          <label>Nom complet</label>
+          <input type="text" id="f-name" placeholder="Mohamed Reda" />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="f-email" placeholder="user@benami.shop" />
+        </div>
+        <div class="form-group">
+          <label>Mot de passe</label>
+          <input type="password" id="f-password" placeholder="Min. 8 caractères" />
+          <div class="hint-small" id="pw-hint">Laissez vide pour ne pas modifier (mode édition).</div>
+        </div>
+        <div class="form-group">
+          <label>Rôle</label>
+          <select id="f-role">
+            <option value="employee">Employé</option>
+            <option value="admin">Administrateur</option>
+          </select>
+        </div>
+        <div class="modal-err" id="modal-err"></div>
       </div>
-      <div class="form-row">
-        <label>Mot de passe</label>
-        <input type="password" id="f-password" placeholder="Min. 6 caractères" />
-        <div class="hint" id="pw-hint">Laissez vide pour ne pas modifier (en mode édition)</div>
-      </div>
-      <div class="form-row">
-        <label>Rôle</label>
-        <select id="f-role">
-          <option value="employee">Employé</option>
-          <option value="admin">Administrateur</option>
-        </select>
-      </div>
-
-      <div class="modal-err" id="modal-err"></div>
-
-      <div class="modal-actions">
-        <button class="btn-cancel" onclick="closeModal()">Annuler</button>
-        <button class="btn-save" onclick="saveUser()">Enregistrer</button>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="Modal.close('user-modal')">Annuler</button>
+        <button class="btn btn-primary" onclick="saveUser()">
+          <i class="fas fa-save"></i> Enregistrer
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Confirm delete modal -->
+  <!-- ── CONFIRM DELETE ────────────────────────────────────────── -->
   <div class="modal-overlay" id="confirm-modal">
-    <div class="modal-box" style="max-width:360px;text-align:center">
-      <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:#b91c1c;display:block;margin-bottom:1rem"></i>
-      <h3 style="margin-bottom:.5rem">Confirmer la suppression</h3>
-      <p class="confirm-text" style="color:#666;font-size:.9rem;margin-bottom:1.5rem">Supprimer cet utilisateur ?</p>
-      <div class="modal-actions" style="justify-content:center">
-        <button class="btn-cancel" onclick="Confirm.no()">Annuler</button>
-        <button class="btn-save" style="background:#b91c1c" onclick="Confirm.yes()">Supprimer</button>
+    <div class="modal modal-sm">
+      <div class="modal-body" style="padding:28px;text-align:center">
+        <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
+        <div class="confirm-title">Supprimer l'utilisateur ?</div>
+        <div class="confirm-text">Cette action est irréversible.</div>
+        <div style="display:flex;gap:9px;margin-top:1.4rem">
+          <button class="btn btn-ghost" style="flex:1" onclick="Confirm.no()">Annuler</button>
+          <button class="btn btn-danger" style="flex:1" onclick="Confirm.yes()">
+            <i class="fas fa-trash-alt"></i> Supprimer
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
-    /* ── Auth guard ───────────────────────────────────────────── */
-    const token = localStorage.getItem('token');
-    const user  = JSON.parse(localStorage.getItem('user') || 'null');
-
-    if (!token || !user) {
-      window.location.href = '/login.html';
-    }
-
+    // initPage gère authGuard (redirige vers login.html si non connecté)
     initPage('Utilisateurs', 'Gestion des comptes');
 
-    /* ── Afficher ou bloquer selon le rôle ─────────────────── */
-    if (user.role !== 'admin') {
-      document.getElementById('access-denied').style.display = 'block';
+    // ✅ TOKEN supprimé — apiCall() lit Auth.getToken() dynamiquement à chaque appel
+    const ME    = Auth.getUser();
+
+    if (!ME || ME.role !== 'admin') {
+      document.getElementById('access-denied-box').style.display = 'block';
     } else {
       document.getElementById('admin-content').style.display = 'block';
       loadUsers();
     }
 
-    /* ══════════════════════════════════════════════════════════
-       DATA
-       ══════════════════════════════════════════════════════════ */
     let allUsers = [];
 
+    /* ── API helper ──────────────────────────────────────────── */
     async function apiCall(path, opts = {}) {
-      const res = await fetch('' + path, {
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      const cfg = window.__APP_CONFIG__ || {};
+      const base = (typeof cfg.apiBase === 'string' && cfg.apiBase.trim())
+        ? cfg.apiBase.trim().replace(/\/+$/, '')
+        : (window.location.origin.replace(/\/+$/, '') + '/api');
+
+      // Accept legacy callsites that pass "/api/..."
+      const url = (typeof path === 'string' && path.startsWith('/api/'))
+        ? base + path.slice(4) // drop "/api"
+        : (typeof path === 'string' && path.startsWith('http')
+            ? path
+            : (base + (String(path || '').startsWith('/') ? String(path || '') : '/' + String(path || ''))));
+
+      const res = await fetch(url, {
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + Auth.getToken() },
         ...opts,
         body: opts.body ? JSON.stringify(opts.body) : undefined,
       });
@@ -208,53 +270,54 @@
       return data;
     }
 
+    /* ── Load ────────────────────────────────────────────────── */
     async function loadUsers() {
       try {
         allUsers = await apiCall('/api/users');
         renderTable();
-      } catch (e) {
+      } catch(e) {
         Toast.error('Erreur chargement : ' + e.message);
       }
     }
 
-    /* ══════════════════════════════════════════════════════════
-       RENDER
-       ══════════════════════════════════════════════════════════ */
+    /* ── Render ──────────────────────────────────────────────── */
     function initials(name) {
       return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
     }
 
     function renderTable() {
       const tbody = document.getElementById('users-tbody');
+      const count = allUsers.length;
       document.getElementById('users-count').textContent =
-        allUsers.length + ' utilisateur' + (allUsers.length !== 1 ? 's' : '');
+        count + ' utilisateur' + (count !== 1 ? 's' : '');
 
-      if (!allUsers.length) {
-        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">
-          <i class="fas fa-users"></i>Aucun utilisateur</div></td></tr>`;
+      if (!count) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:3rem;text-align:center;color:var(--text-muted)">
+          <i class="fas fa-users" style="display:block;font-size:2rem;margin-bottom:1rem"></i>Aucun utilisateur
+        </td></tr>`;
         return;
       }
 
       tbody.innerHTML = allUsers.map(u => {
-        const isMe = u.id === user.id;
+        const isMe = ME && u.id === ME.id;
         const av   = initials(u.name);
         const date = String(u.created_at || '').slice(0,10);
-        const activeIcon = u.is_active ? 'fa-ban' : 'fa-check-circle';
+        const activeIcon  = u.is_active ? 'fa-ban' : 'fa-check-circle';
         const activeTitle = u.is_active ? 'Désactiver' : 'Activer';
         return `
         <tr>
           <td>
-            <div class="user-avatar-cell">
-              <div class="u-avatar ${u.role}">${av}</div>
+            <div class="user-av-cell">
+              <div class="u-avatar-sm ${u.role}">${av}</div>
               <div>
-                <div class="u-name">${u.name}${isMe ? ' <span style="font-size:.7rem;color:#888">(vous)</span>' : ''}</div>
+                <div class="u-name">${u.name}${isMe ? ' <span style="font-size:.68rem;color:var(--text-dim)">(vous)</span>' : ''}</div>
                 <div class="u-email">${u.email}</div>
               </div>
             </div>
           </td>
           <td>
             <span class="role-badge ${u.role}">
-              <i class="fas ${u.role === 'admin' ? 'fa-shield-alt' : 'fa-user'}"></i>
+              <i class="fas ${u.role === 'admin' ? 'fa-shield-alt' : 'fa-hard-hat'}"></i>
               ${u.role === 'admin' ? 'Administrateur' : 'Employé'}
             </span>
           </td>
@@ -264,16 +327,21 @@
               ${u.is_active ? 'Actif' : 'Inactif'}
             </span>
           </td>
-          <td style="color:#888;font-size:.85rem">${date}</td>
+          <td style="color:var(--text-muted);font-size:.82rem">${date}</td>
           <td>
             <div class="action-btns">
               <button class="btn-icon edit" title="Modifier" onclick="openModal(${u.id})">
                 <i class="fas fa-pen"></i>
               </button>
-              <button class="btn-icon toggle" title="${activeTitle}" onclick="toggleUser(${u.id}, ${u.is_active})" ${isMe ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>
+              <button class="btn-icon toggle" title="${activeTitle}"
+                onclick="toggleUser(${u.id}, ${u.is_active})"
+                ${isMe ? 'disabled style="opacity:.35;cursor:not-allowed"' : ''}>
                 <i class="fas ${activeIcon}"></i>
               </button>
-              <button class="btn-icon del" title="Supprimer" onclick="deleteUser(${u.id}, '${u.name}')" ${isMe ? 'disabled style="opacity:.4;cursor:not-allowed"' : ''}>
+              <button class="btn-icon del" title="Supprimer"
+                onclick="deleteUser(${u.id}, '${u.name.replace(/'/g,"\\'")}')
+"
+                ${isMe ? 'disabled style="opacity:.35;cursor:not-allowed"' : ''}>
                 <i class="fas fa-trash"></i>
               </button>
             </div>
@@ -282,12 +350,11 @@
       }).join('');
     }
 
-    /* ══════════════════════════════════════════════════════════
-       MODAL
-       ══════════════════════════════════════════════════════════ */
+    /* ── Modal ───────────────────────────────────────────────── */
     function openModal(id = null) {
-      document.getElementById('modal-err').style.display = 'none';
-      document.getElementById('edit-id').value = id || '';
+      const errEl = document.getElementById('modal-err');
+      errEl.style.display = 'none';
+      document.getElementById('edit-id').value    = id || '';
       document.getElementById('f-password').value = '';
 
       if (id) {
@@ -304,15 +371,11 @@
         document.getElementById('f-role').value  = 'employee';
         document.getElementById('pw-hint').style.display = 'none';
       }
-      document.getElementById('user-modal').classList.add('open');
-    }
-
-    function closeModal() {
-      document.getElementById('user-modal').classList.remove('open');
+      Modal.open('user-modal');
     }
 
     async function saveUser() {
-      const errEl = document.getElementById('modal-err');
+      const errEl  = document.getElementById('modal-err');
       errEl.style.display = 'none';
 
       const id       = document.getElementById('edit-id').value;
@@ -321,58 +384,63 @@
       const password = document.getElementById('f-password').value;
       const role     = document.getElementById('f-role').value;
 
-      if (!name || !email) { errEl.textContent = 'Nom et email requis.'; errEl.style.display='block'; return; }
-      if (!id && !password) { errEl.textContent = 'Mot de passe requis.'; errEl.style.display='block'; return; }
-      if (password && password.length < 6) { errEl.textContent = 'Mot de passe trop court.'; errEl.style.display='block'; return; }
+      if (!name || !email) {
+        errEl.textContent = 'Nom et email requis.';
+        errEl.style.display = 'block'; return;
+      }
+      if (!id && !password) {
+        errEl.textContent = 'Mot de passe requis.';
+        errEl.style.display = 'block'; return;
+      }
+      if (password && password.length < 8) {
+        errEl.textContent = 'Mot de passe trop court (min. 8 car.).';
+        errEl.style.display = 'block'; return;
+      }
 
       const body = { name, email, role };
       if (password) body.password = password;
 
       try {
         if (id) {
-          await apiCall('/api/users/' + id, { method: 'PUT', body });
+          await apiCall('/api/users/' + id, { method:'PUT', body });
           Toast.success('Utilisateur mis à jour !');
         } else {
-          await apiCall('/api/users', { method: 'POST', body });
+          await apiCall('/api/users', { method:'POST', body });
           Toast.success('Utilisateur créé !');
         }
-        closeModal();
+        Modal.close('user-modal');
         await loadUsers();
-      } catch (e) {
+      } catch(e) {
         errEl.textContent = e.message;
         errEl.style.display = 'block';
       }
     }
 
-    /* ══════════════════════════════════════════════════════════
-       ACTIONS
-       ══════════════════════════════════════════════════════════ */
+    /* ── Actions ─────────────────────────────────────────────── */
     async function toggleUser(id, currentActive) {
       try {
-        await apiCall('/api/users/' + id, { method: 'PUT', body: { is_active: currentActive ? 0 : 1 } });
+        await apiCall('/api/users/' + id, { method:'PUT', body:{ is_active: currentActive ? 0 : 1 } });
         Toast.info(currentActive ? 'Compte désactivé.' : 'Compte activé.');
         await loadUsers();
-      } catch (e) {
+      } catch(e) {
         Toast.error(e.message);
       }
     }
 
     async function deleteUser(id, name) {
-      const ok = await Confirm.show('Supprimer l\'utilisateur "' + name + '" ?');
+      const ok = await Confirm.show(`Supprimer l'utilisateur "${name}" ?`);
       if (!ok) return;
       try {
-        await apiCall('/api/users/' + id, { method: 'DELETE' });
+        await apiCall('/api/users/' + id, { method:'DELETE' });
         Toast.success('Utilisateur supprimé.');
         await loadUsers();
-      } catch (e) {
+      } catch(e) {
         Toast.error(e.message);
       }
     }
 
-    /* Fermer modal sur clic backdrop */
-    document.getElementById('user-modal').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeModal();
-    });
+    Modal.bindBackdrop('user-modal');
+    Modal.bindBackdrop('confirm-modal');
   </script>
 </body>
 </html>

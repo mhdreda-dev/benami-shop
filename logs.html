@@ -1,7 +1,17 @@
 <!DOCTYPE html>
+<!--
+  BEN AMI SHOP — logs.html
+  FIXES:
+  - Redirection vers login.html (relatif, pas /login.html)
+  - Style dark mode cohérent avec le reste de l'app
+  - Auto-refresh toutes les 30s (inchangé)
+-->
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Activity Logs — Ben Ami Shop</title>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -9,79 +19,143 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
     /* ── KPI cards ── */
-    .log-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:1.5rem; }
-    .log-kpi  { background:#fff; border:1px solid #eee; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:12px; }
-    .log-kpi-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
-    .log-kpi-val  { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; line-height:1; }
-    .log-kpi-label{ font-size:11px; color:#888; margin-top:2px; }
+    .log-kpis {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+      gap:12px; margin-bottom:1.5rem;
+    }
+    .log-kpi {
+      background:var(--surface,#101010); border:1px solid var(--border,#252525);
+      border-radius:12px; padding:16px 18px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .log-kpi-icon {
+      width:38px; height:38px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; flex-shrink:0;
+    }
+    .log-kpi-val   { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; line-height:1; }
+    .log-kpi-label { font-size:11px; color:var(--text-muted,#808080); margin-top:2px; }
 
     /* ── Toolbar ── */
     .logs-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:1rem; }
     .logs-toolbar select, .logs-toolbar input[type=date] {
-      padding:.5rem .8rem; border:1.5px solid #dde1eb; border-radius:8px;
-      font-size:.85rem; background:#fff; color:#333; cursor:pointer;
+      padding:.5rem .8rem;
+      border:1.5px solid var(--border-2,#303030);
+      border-radius:8px; font-size:.84rem;
+      background:var(--surface-2,#181818); color:var(--text,#f0f0f0);
+      cursor:pointer; font-family:inherit;
     }
-    .logs-toolbar select:focus, .logs-toolbar input:focus { border-color:#4f46e5; outline:none; }
-    .btn-refresh { background:#4f46e5; color:#fff; border:none; border-radius:8px; padding:.5rem 1rem; font-size:.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.4rem; }
-    .btn-refresh:hover { background:#3730a3; }
-    .btn-purge  { background:#fee2e2; color:#b91c1c; border:none; border-radius:8px; padding:.5rem 1rem; font-size:.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:.4rem; margin-left:auto; }
-    .btn-purge:hover { background:#b91c1c; color:#fff; }
+    .logs-toolbar select:focus, .logs-toolbar input:focus { border-color:#f97316; outline:none; }
+    .logs-toolbar select option { background:var(--surface-2,#181818); }
+    .btn-refresh {
+      background:#f97316; color:#fff; border:none; border-radius:8px;
+      padding:.5rem 1rem; font-size:.84rem; font-weight:700; cursor:pointer;
+      display:flex; align-items:center; gap:.4rem; font-family:inherit;
+    }
+    .btn-refresh:hover { background:#ea6b0a; }
+    .btn-purge {
+      background:rgba(239,68,68,.12); color:#ef4444;
+      border:1px solid rgba(239,68,68,.25);
+      border-radius:8px; padding:.5rem 1rem;
+      font-size:.84rem; font-weight:700; cursor:pointer;
+      display:flex; align-items:center; gap:.4rem;
+      margin-left:auto; font-family:inherit;
+    }
+    .btn-purge:hover { background:#b91c1c; color:#fff; border-color:#b91c1c; }
 
     /* ── Table ── */
-    .logs-table-wrap { background:#fff; border-radius:14px; box-shadow:0 2px 16px rgba(0,0,0,.07); overflow:hidden; }
+    .logs-table-wrap {
+      background:var(--surface,#101010);
+      border:1px solid var(--border,#252525);
+      border-radius:var(--radius,12px); overflow:hidden;
+    }
     table.logs-table { width:100%; border-collapse:collapse; font-size:.875rem; }
-    table.logs-table thead th { background:#f8f9ff; padding:.65rem 1rem; text-align:left; font-size:.75rem; font-weight:700; color:#888; text-transform:uppercase; letter-spacing:.04em; border-bottom:1px solid #eee; white-space:nowrap; }
-    table.logs-table tbody tr { border-bottom:1px solid #f5f5f5; transition:background .12s; }
-    table.logs-table tbody tr:hover { background:#fafafe; }
+    table.logs-table thead th {
+      background:var(--surface-2,#181818); padding:.65rem 1rem;
+      text-align:left; font-size:.72rem; font-weight:700;
+      color:var(--text-muted,#808080); text-transform:uppercase;
+      letter-spacing:.04em; border-bottom:1px solid var(--border,#252525);
+      white-space:nowrap;
+    }
+    table.logs-table tbody tr {
+      border-bottom:1px solid var(--border,#252525); transition:background .12s;
+    }
+    table.logs-table tbody tr:last-child { border-bottom:none; }
+    table.logs-table tbody tr:hover { background:var(--surface-2,#181818); }
     table.logs-table td { padding:.7rem 1rem; vertical-align:middle; }
 
     /* ── Action badges ── */
-    .action-badge { display:inline-flex; align-items:center; gap:.3rem; padding:.22rem .65rem; border-radius:999px; font-size:.72rem; font-weight:700; white-space:nowrap; }
-    .action-badge.LOGIN          { background:#ede9fe; color:#5b21b6; }
-    .action-badge.ADD_PRODUCT    { background:#dcfce7; color:#15803d; }
-    .action-badge.UPDATE_PRODUCT { background:#dbeafe; color:#1d4ed8; }
-    .action-badge.DELETE_PRODUCT { background:#fee2e2; color:#b91c1c; }
-    .action-badge.STOCK_IN       { background:#d1fae5; color:#065f46; }
-    .action-badge.STOCK_OUT      { background:#fff7ed; color:#c2410c; }
-    .action-badge.STOCK_ADJUST   { background:#fef9c3; color:#854d0e; }
-    .action-badge.LOGS_PURGED    { background:#f3f4f6; color:#374151; }
+    .action-badge {
+      display:inline-flex; align-items:center; gap:.3rem;
+      padding:.22rem .65rem; border-radius:999px;
+      font-size:.7rem; font-weight:700; white-space:nowrap;
+    }
+    .action-badge.LOGIN          { background:rgba(168,85,247,.15);  color:#a855f7; }
+    .action-badge.ADD_PRODUCT    { background:rgba(34,197,94,.12);   color:#22c55e; }
+    .action-badge.UPDATE_PRODUCT { background:rgba(59,130,246,.12);  color:#3b82f6; }
+    .action-badge.DELETE_PRODUCT { background:rgba(239,68,68,.12);   color:#ef4444; }
+    .action-badge.STOCK_IN       { background:rgba(34,197,94,.1);    color:#4ade80; }
+    .action-badge.STOCK_OUT      { background:rgba(249,115,22,.12);  color:#f97316; }
+    .action-badge.STOCK_ADJUST   { background:rgba(234,179,8,.12);   color:#eab308; }
+    .action-badge.LOGS_PURGED    { background:rgba(107,114,128,.12); color:#9ca3af; }
+    .action-badge.LOGOUT         { background:rgba(239,68,68,.08);   color:#f87171; }
+    .action-badge.CREATE_USER    { background:rgba(99,102,241,.12);  color:#818cf8; }
 
-    /* ── Role badge ── */
-    .role-pill { display:inline-flex; align-items:center; gap:.3rem; padding:.18rem .55rem; border-radius:999px; font-size:.7rem; font-weight:700; }
-    .role-pill.admin    { background:#ede9fe; color:#5b21b6; }
-    .role-pill.employee { background:#fff7ed; color:#c2410c; }
+    /* ── Role pill ── */
+    .role-pill {
+      display:inline-flex; align-items:center; gap:.3rem;
+      padding:.18rem .55rem; border-radius:999px;
+      font-size:.68rem; font-weight:700;
+    }
+    .role-pill.admin    { background:rgba(91,33,182,.2);  color:#a855f7; }
+    .role-pill.employee { background:rgba(194,65,12,.15); color:#f97316; }
+    .role-pill.system   { background:rgba(107,114,128,.12); color:#9ca3af; }
 
     /* ── User cell ── */
     .user-cell { display:flex; align-items:center; gap:.6rem; }
-    .u-av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.65rem; font-weight:700; color:#fff; flex-shrink:0; }
-    .u-av.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
-    .u-av.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
-    .u-av.system   { background:#6b7280; }
+    .u-av-sm {
+      width:28px; height:28px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.62rem; font-weight:700; color:#fff; flex-shrink:0;
+    }
+    .u-av-sm.admin    { background:linear-gradient(135deg,#4f46e5,#7c3aed); }
+    .u-av-sm.employee { background:linear-gradient(135deg,#f97316,#ef4444); }
+    .u-av-sm.system   { background:#4b5563; }
 
     /* ── Target cell ── */
-    .target-cell { max-width:260px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:#555; font-size:.82rem; }
+    .target-cell {
+      max-width:240px; overflow:hidden; text-overflow:ellipsis;
+      white-space:nowrap; color:var(--text-muted,#808080); font-size:.8rem;
+    }
 
     /* ── Pagination ── */
-    .logs-pagination { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; border-top:1px solid #f0f0f0; background:#fafafe; flex-wrap:wrap; gap:.5rem; }
-    .logs-pagination span { font-size:.82rem; color:#888; }
+    .logs-pagination {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:.75rem 1rem; border-top:1px solid var(--border,#252525);
+      background:var(--surface-2,#181818); flex-wrap:wrap; gap:.5rem;
+    }
+    .logs-pagination span { font-size:.82rem; color:var(--text-muted,#808080); }
     .page-btns { display:flex; gap:4px; }
-    .page-btn-l { padding:.35rem .75rem; border:1px solid #dde1eb; border-radius:6px; background:#fff; font-size:.82rem; cursor:pointer; color:#555; }
-    .page-btn-l:hover:not(:disabled) { border-color:#4f46e5; color:#4f46e5; }
-    .page-btn-l:disabled { opacity:.4; cursor:not-allowed; }
-    .page-btn-l.active { background:#4f46e5; color:#fff; border-color:#4f46e5; }
+    .page-btn-l {
+      padding:.35rem .75rem; border:1px solid var(--border-2,#303030);
+      border-radius:6px; background:var(--surface,#101010);
+      font-size:.82rem; cursor:pointer; color:var(--text-muted,#808080);
+      font-family:inherit;
+    }
+    .page-btn-l:hover:not(:disabled) { border-color:#f97316; color:#f97316; }
+    .page-btn-l:disabled { opacity:.35; cursor:not-allowed; }
+    .page-btn-l.active { background:#f97316; color:#fff; border-color:#f97316; }
 
     /* ── Empty / loading ── */
-    .logs-empty { text-align:center; padding:3rem; color:#aaa; }
+    .logs-empty { text-align:center; padding:3rem; color:var(--text-muted,#808080); }
     .logs-empty i { font-size:2.5rem; display:block; margin-bottom:.75rem; }
 
-    /* ── Live indicator ── */
-    .live-dot { width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; animation:pulse 1.5s infinite; margin-right:4px; }
-    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
-
-    /* ── Confirm overlay ── */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.open { display:flex; }
-    .modal-box { background:#fff; border-radius:14px; padding:2rem; max-width:380px; width:100%; text-align:center; box-shadow:0 8px 40px rgba(0,0,0,.2); }
+    /* ── Live dot ── */
+    .live-dot {
+      width:8px; height:8px; border-radius:50%; background:#22c55e;
+      display:inline-block; animation:lpulse 1.5s infinite; margin-right:4px;
+    }
+    @keyframes lpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
   </style>
 </head>
 <body>
@@ -95,14 +169,14 @@
         <p>Historique complet de toutes les actions utilisateurs</p>
       </div>
 
-      <!-- KPI row -->
-      <div class="log-kpis" id="log-kpis">
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#ede9fe;color:#5b21b6"><i class="fas fa-list-alt"></i></div><div><div class="log-kpi-val" id="kpi-total">—</div><div class="log-kpi-label">Total logs</div></div></div>
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#dcfce7;color:#15803d"><i class="fas fa-plus-circle"></i></div><div><div class="log-kpi-val" id="kpi-add">—</div><div class="log-kpi-label">Produits ajoutés</div></div></div>
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#fee2e2;color:#b91c1c"><i class="fas fa-trash-alt"></i></div><div><div class="log-kpi-val" id="kpi-del">—</div><div class="log-kpi-label">Suppressions</div></div></div>
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#d1fae5;color:#065f46"><i class="fas fa-arrow-down"></i></div><div><div class="log-kpi-val" id="kpi-in">—</div><div class="log-kpi-label">Entrées stock</div></div></div>
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#fff7ed;color:#c2410c"><i class="fas fa-arrow-up"></i></div><div><div class="log-kpi-val" id="kpi-out">—</div><div class="log-kpi-label">Sorties stock</div></div></div>
-        <div class="log-kpi"><div class="log-kpi-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fas fa-sign-in-alt"></i></div><div><div class="log-kpi-val" id="kpi-login">—</div><div class="log-kpi-label">Connexions</div></div></div>
+      <!-- KPIs -->
+      <div class="log-kpis">
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(168,85,247,.15);color:#a855f7"><i class="fas fa-list-alt"></i></div><div><div class="log-kpi-val" id="kpi-total">—</div><div class="log-kpi-label">Total logs</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(34,197,94,.12);color:#22c55e"><i class="fas fa-plus-circle"></i></div><div><div class="log-kpi-val" id="kpi-add">—</div><div class="log-kpi-label">Produits ajoutés</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(239,68,68,.12);color:#ef4444"><i class="fas fa-trash-alt"></i></div><div><div class="log-kpi-val" id="kpi-del">—</div><div class="log-kpi-label">Suppressions</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(34,197,94,.1);color:#4ade80"><i class="fas fa-arrow-down"></i></div><div><div class="log-kpi-val" id="kpi-in">—</div><div class="log-kpi-label">Entrées stock</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(249,115,22,.12);color:#f97316"><i class="fas fa-arrow-up"></i></div><div><div class="log-kpi-val" id="kpi-out">—</div><div class="log-kpi-label">Sorties stock</div></div></div>
+        <div class="log-kpi"><div class="log-kpi-icon" style="background:rgba(59,130,246,.12);color:#3b82f6"><i class="fas fa-sign-in-alt"></i></div><div><div class="log-kpi-val" id="kpi-login">—</div><div class="log-kpi-label">Connexions</div></div></div>
       </div>
 
       <!-- Toolbar -->
@@ -110,12 +184,15 @@
         <select id="f-action">
           <option value="">Toutes les actions</option>
           <option value="LOGIN">LOGIN</option>
+          <option value="LOGOUT">LOGOUT</option>
           <option value="ADD_PRODUCT">ADD_PRODUCT</option>
           <option value="UPDATE_PRODUCT">UPDATE_PRODUCT</option>
           <option value="DELETE_PRODUCT">DELETE_PRODUCT</option>
           <option value="STOCK_IN">STOCK_IN</option>
           <option value="STOCK_OUT">STOCK_OUT</option>
           <option value="STOCK_ADJUST">STOCK_ADJUST</option>
+          <option value="CREATE_USER">CREATE_USER</option>
+          <option value="LOGS_PURGED">LOGS_PURGED</option>
         </select>
 
         <select id="f-user">
@@ -167,34 +244,39 @@
 
   <div class="toast-container" id="toast-container"></div>
 
-  <!-- Confirm purge modal -->
+  <!-- ── PURGE CONFIRM ──────────────────────────────────────────── -->
   <div class="modal-overlay" id="purge-modal">
-    <div class="modal-box">
-      <i class="fas fa-exclamation-triangle" style="font-size:2.2rem;color:#b91c1c;display:block;margin-bottom:.75rem"></i>
-      <h3 style="margin-bottom:.5rem">Purger tous les logs ?</h3>
-      <p style="color:#666;font-size:.9rem;margin-bottom:1.5rem">Cette action supprime définitivement tout l'historique. Elle sera elle-même enregistrée.</p>
-      <div style="display:flex;gap:.75rem;justify-content:center">
-        <button onclick="closePurge()" style="padding:.6rem 1.4rem;border:1px solid #dde1eb;border-radius:8px;background:#fff;cursor:pointer;font-weight:600">Annuler</button>
-        <button onclick="doPurge()" style="padding:.6rem 1.4rem;background:#b91c1c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:700">Purger</button>
+    <div class="modal modal-sm">
+      <div class="modal-body" style="padding:28px;text-align:center">
+        <div class="confirm-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <div class="confirm-title">Purger tous les logs ?</div>
+        <div class="confirm-text">Cette action supprime définitivement tout l'historique et sera elle-même enregistrée.</div>
+        <div style="display:flex;gap:9px;margin-top:1.4rem">
+          <button class="btn btn-ghost" style="flex:1" onclick="closePurge()">Annuler</button>
+          <button class="btn btn-danger" style="flex:1" onclick="doPurge()">
+            <i class="fas fa-trash"></i> Purger
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="assets/js/db.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="config.js?v=9"></script>
+  <script src="assets/js/db.js?v=9"></script>
+  <script src="assets/js/app.js?v=9"></script>
   <script>
-    /* ── Guard : admin only ─────────────────────────────────── */
-    const TOKEN = localStorage.getItem('token');
-    const ME    = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!TOKEN || !ME) window.location.href = '/login.html';
-
+    // initPage gère le guard + la redirection vers login.html (relatif)
     initPage('Activity Logs', 'Audit');
 
-    if (ME.role !== 'admin') {
+    // ✅ TOKEN supprimé — api() lit Auth.getToken() dynamiquement à chaque appel
+    const ME    = Auth.getUser();
+
+    // Si non-admin, afficher message et bloquer
+    if (!ME || ME.role !== 'admin') {
       document.querySelector('.page-content').innerHTML = `
-        <div style="text-align:center;padding:4rem">
-          <i class="fas fa-lock" style="font-size:3rem;color:#b91c1c;display:block;margin-bottom:1rem"></i>
-          <h2>Accès réservé aux administrateurs</h2>
+        <div style="text-align:center;padding:5rem">
+          <i class="fas fa-lock" style="font-size:3rem;color:#ef4444;display:block;margin-bottom:1rem"></i>
+          <h2 style="font-family:'Syne',sans-serif">Accès réservé aux administrateurs</h2>
         </div>`;
     }
 
@@ -202,13 +284,24 @@
     const PER_PAGE = 50;
     let currentPage = 1;
     let totalLogs   = 0;
-    let allUsers    = [];
 
     /* ── API helper ─────────────────────────────────────────── */
     async function api(path, opts = {}) {
-      const r = await fetch('' + path, {
+      const cfg = window.__APP_CONFIG__ || {};
+      const base = (typeof cfg.apiBase === 'string' && cfg.apiBase.trim())
+        ? cfg.apiBase.trim().replace(/\/+$/, '')
+        : (window.location.origin.replace(/\/+$/, '') + '/api');
+
+      // Accept legacy callsites that pass "/api/..."
+      const url = (typeof path === 'string' && path.startsWith('/api/'))
+        ? base + path.slice(4) // drop "/api"
+        : (typeof path === 'string' && path.startsWith('http')
+            ? path
+            : (base + (String(path || '').startsWith('/') ? String(path || '') : '/' + String(path || ''))));
+
+      const r = await fetch(url, {
         ...opts,
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }
+        headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + Auth.getToken() }
       });
       if (r.status === 401) { logout(); return null; }
       return r.json();
@@ -216,32 +309,51 @@
 
     /* ── Action meta ────────────────────────────────────────── */
     const ACTION_META = {
-      LOGIN:          { icon:'fa-sign-in-alt',   label:'LOGIN' },
-      ADD_PRODUCT:    { icon:'fa-plus-circle',   label:'ADD_PRODUCT' },
-      UPDATE_PRODUCT: { icon:'fa-pen',           label:'UPDATE_PRODUCT' },
-      DELETE_PRODUCT: { icon:'fa-trash-alt',     label:'DELETE_PRODUCT' },
-      STOCK_IN:       { icon:'fa-arrow-down',    label:'STOCK_IN' },
-      STOCK_OUT:      { icon:'fa-arrow-up',      label:'STOCK_OUT' },
-      STOCK_ADJUST:   { icon:'fa-arrows-alt-v',  label:'STOCK_ADJUST' },
-      LOGS_PURGED:    { icon:'fa-broom',         label:'LOGS_PURGED' },
+      LOGIN:          'fa-sign-in-alt',
+      LOGOUT:         'fa-sign-out-alt',
+      ADD_PRODUCT:    'fa-plus-circle',
+      UPDATE_PRODUCT: 'fa-pen',
+      DELETE_PRODUCT: 'fa-trash-alt',
+      STOCK_IN:       'fa-arrow-down',
+      STOCK_OUT:      'fa-arrow-up',
+      STOCK_ADJUST:   'fa-arrows-alt-v',
+      LOGS_PURGED:    'fa-broom',
+      CREATE_USER:    'fa-user-plus',
     };
 
-    /* ── Load users for filter ──────────────────────────────── */
-    async function loadUsers() {
-      const data = await api('/api/users');
-      if (!data) return;
-      allUsers = data;
-      const sel = document.getElementById('f-user');
-      sel.innerHTML = '<option value="">Tous les utilisateurs</option>' +
-        data.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+    function escHtml(v) {
+      return String(v === undefined || v === null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
     }
 
-    /* ── Load KPI stats ─────────────────────────────────────── */
+    /* ── Load users filter ──────────────────────────────────── */
+    async function loadUserFilter() {
+      const data = await api('/api/users');
+      if (!data) return;
+      const sel = document.getElementById('f-user');
+      sel.innerHTML = '';
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = '';
+      defaultOpt.textContent = 'Tous les utilisateurs';
+      sel.appendChild(defaultOpt);
+      data.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = String(u.id);
+        opt.textContent = `${u.name} (${u.email})`;
+        sel.appendChild(opt);
+      });
+    }
+
+    /* ── KPIs ───────────────────────────────────────────────── */
     async function loadKPIs() {
       const data = await api('/api/logs?limit=500');
       if (!data) return;
       const logs = data.logs || [];
-      const cnt  = (action) => logs.filter(l => l.action === action).length;
+      const cnt  = a => logs.filter(l => l.action === a).length;
       document.getElementById('kpi-total').textContent = data.total;
       document.getElementById('kpi-add').textContent   = cnt('ADD_PRODUCT');
       document.getElementById('kpi-del').textContent   = cnt('DELETE_PRODUCT');
@@ -252,6 +364,8 @@
 
     /* ── Load logs ──────────────────────────────────────────── */
     async function loadLogs() {
+      if (!ME || ME.role !== 'admin') return;
+
       const action = document.getElementById('f-action').value;
       const userId = document.getElementById('f-user').value;
       const from   = document.getElementById('f-from').value;
@@ -273,13 +387,11 @@
       const logs = data.logs || [];
       const totalPages = Math.max(1, Math.ceil(totalLogs / PER_PAGE));
 
-      /* Info */
       const from_ = (currentPage - 1) * PER_PAGE + 1;
       const to_   = Math.min(currentPage * PER_PAGE, totalLogs);
       document.getElementById('logs-info').textContent =
         totalLogs > 0 ? `${from_}–${to_} sur ${totalLogs} log${totalLogs > 1 ? 's' : ''}` : '0 log';
 
-      /* Pagination btns */
       document.getElementById('btn-prev').disabled = currentPage <= 1;
       document.getElementById('btn-next').disabled = currentPage >= totalPages;
       document.getElementById('btn-page').textContent = `${currentPage} / ${totalPages}`;
@@ -287,28 +399,37 @@
       if (!logs.length) {
         document.getElementById('logs-tbody').innerHTML =
           '<tr><td colspan="6"><div class="logs-empty"><i class="fas fa-search"></i>Aucun log trouvé</div></td></tr>';
+        loadKPIs();
         return;
       }
 
       document.getElementById('logs-tbody').innerHTML = logs.map(l => {
-        const meta = ACTION_META[l.action] || { icon:'fa-circle', label: l.action };
-        const av   = (l.user_name || 'S').split('@')[0].slice(0,2).toUpperCase();
-        const roleCls = l.role === 'admin' ? 'admin' : l.role === 'employee' ? 'employee' : 'system';
-        const date = String(l.created_at || '').slice(0, 16).replace('T', ' ');
-
+        const actionRaw = String(l.action || '');
+        const actionCls = actionRaw.replace(/[^A-Z_]/g, '') || 'UNKNOWN';
+        const icon  = ACTION_META[actionCls] || 'fa-circle';
+        const userRaw = String(l.user_name || 'SY');
+        const avSeed = userRaw.split('@')[0].replace(/[^A-Za-z0-9]/g, '');
+        const av    = (avSeed.slice(0, 2) || 'SY').toUpperCase();
+        const rCls  = l.role === 'admin' ? 'admin' : l.role === 'employee' ? 'employee' : 'system';
+        const date  = escHtml(String(l.created_at || '').slice(0, 16).replace('T', ' '));
+        const user  = escHtml(userRaw);
+        const role  = escHtml(l.role || 'system');
+        const action = escHtml(actionRaw || 'UNKNOWN');
+        const target = escHtml(l.target || '');
+        const id = Number(l.id) || 0;
         return `
           <tr>
-            <td style="color:#bbb;font-size:.78rem;font-weight:600">#${l.id}</td>
+            <td style="color:var(--text-dim);font-size:.75rem;font-weight:600">#${id}</td>
             <td>
               <div class="user-cell">
-                <div class="u-av ${roleCls}">${av}</div>
-                <span style="font-size:.84rem;font-weight:600;color:#1a1a2e">${l.user_name}</span>
+                <div class="u-av-sm ${rCls}">${av}</div>
+                <span style="font-size:.83rem;font-weight:600">${user}</span>
               </div>
             </td>
-            <td><span class="role-pill ${roleCls}">${l.role}</span></td>
-            <td><span class="action-badge ${l.action}"><i class="fas ${meta.icon}"></i>${meta.label}</span></td>
-            <td><div class="target-cell" title="${l.target || ''}">${l.target || '<span style="color:#ccc">—</span>'}</div></td>
-            <td style="color:#888;font-size:.82rem;white-space:nowrap">${date}</td>
+            <td><span class="role-pill ${rCls}">${role}</span></td>
+            <td><span class="action-badge ${actionCls}"><i class="fas ${icon}"></i>${action}</span></td>
+            <td><div class="target-cell" title="${target}">${target || '<span style="color:var(--text-dim)">—</span>'}</div></td>
+            <td style="color:var(--text-muted);font-size:.8rem;white-space:nowrap">${date}</td>
           </tr>`;
       }).join('');
 
@@ -322,24 +443,18 @@
       loadLogs();
     }
 
-    /* ── Filters ────────────────────────────────────────────── */
+    /* ── Filters ─────────────────────────────────────────────── */
     ['f-action','f-user','f-from','f-to'].forEach(id => {
-      document.getElementById(id).addEventListener('change', () => {
-        currentPage = 1;
-        loadLogs();
-      });
+      document.getElementById(id)?.addEventListener('change', () => { currentPage = 1; loadLogs(); });
     });
 
     /* ── Purge ──────────────────────────────────────────────── */
-    function confirmPurge() {
-      document.getElementById('purge-modal').classList.add('open');
-    }
-    function closePurge() {
-      document.getElementById('purge-modal').classList.remove('open');
-    }
+    function confirmPurge() { Modal.open('purge-modal'); }
+    function closePurge()   { Modal.close('purge-modal'); }
+
     async function doPurge() {
       closePurge();
-      const r = await api('/api/logs', { method: 'DELETE' });
+      const r = await api('/api/logs', { method:'DELETE' });
       if (r && r.success) {
         Toast.success('Logs purgés avec succès.');
         currentPage = 1;
@@ -349,12 +464,14 @@
       }
     }
 
-    /* ── Auto-refresh toutes les 30s ────────────────────────── */
-    setInterval(() => loadLogs(), 30000);
+    Modal.bindBackdrop('purge-modal');
+
+    /* ── Auto-refresh 30s ───────────────────────────────────── */
+    let autoRefreshTimer = setInterval(() => { if (ME && ME.role === 'admin') loadLogs(); }, 30000);
 
     /* ── Init ───────────────────────────────────────────────── */
-    if (ME.role === 'admin') {
-      loadUsers().then(() => loadLogs());
+    if (ME && ME.role === 'admin') {
+      loadUserFilter().then(() => loadLogs());
     }
   </script>
 </body>
