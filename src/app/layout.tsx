@@ -17,11 +17,13 @@ export const metadata: Metadata = {
     siteName: "Ben Ami Shop",
     title: "Ben Ami Shop",
     description: "Mode, vêtements et chaussures sélectionnés avec soin.",
+    images: [{ url: "https://benamishop.vercel.app/brand/ben-ami-logo.png", width: 800, height: 800, alt: "BEN AMI" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Ben Ami Shop",
     description: "Mode, vêtements et chaussures sélectionnés avec soin.",
+    images: ["https://benamishop.vercel.app/brand/ben-ami-logo.png"],
   },
 };
 

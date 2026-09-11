@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/admin/login-form";
@@ -16,7 +17,7 @@ export default async function AdminLoginPage() {
   return (
     <main id="main-content" className="login-page">
       <section className="login-card" aria-labelledby="login-title">
-        <div className="login-brand"><span className="brand-mark">BA</span></div>
+        <div className="login-brand"><Image className="login-brand-logo" src="/brand/ben-ami-logo.png" alt="BEN AMI" width={88} height={88} sizes="88px" /></div>
         <p className="login-kicker">Ben Ami Shop</p>
         <h1 id="login-title">Espace administration</h1>
         <p className="login-description">Connectez-vous pour gérer votre boutique.</p>
