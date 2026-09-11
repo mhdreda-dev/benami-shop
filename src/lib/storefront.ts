@@ -23,8 +23,9 @@ function safeHttpUrl(value: string | undefined) {
 }
 
 export const getStoreSettings = cache(async () => {
-  const rows = await prisma.setting.findMany({ where: { key: { in: ["store_name", "whatsapp_number", "instagram_url", "store_address", "phone", "currency", "site_url"] } }, select: { key: true, value: true } });
+  const rows = await prisma.setting.findMany({ where: { key: { in: ["store_name", "whatsapp_number", "instagram_url", "store_address", "phone", "currency", "site_url", "low_stock_threshold"] } }, select: { key: true, value: true } });
   const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const parsedLowStockThreshold = Number.parseInt(values.low_stock_threshold || "3", 10);
   return {
     storeName: values.store_name || "Ben Ami Shop",
     whatsapp: values.whatsapp_number?.replace(/\D/g, "") || "",
@@ -33,6 +34,7 @@ export const getStoreSettings = cache(async () => {
     phone: values.phone || "",
     currency: values.currency || "MAD",
     siteUrl: safeHttpUrl(values.site_url),
+    lowStockThreshold: Number.isFinite(parsedLowStockThreshold) ? Math.max(0, parsedLowStockThreshold) : 3,
   };
 });
 
